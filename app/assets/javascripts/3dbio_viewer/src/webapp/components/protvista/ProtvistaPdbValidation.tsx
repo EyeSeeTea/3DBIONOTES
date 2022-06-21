@@ -5,24 +5,83 @@ import { ProtvistaPdb, ProtvistaPdbProps } from "./ProtvistaPdb";
 declare global {
     const d3: typeof d3Module;
 }
+const data = [
+    {
+        name: "foo",
+        units: 32,
+    },
+    {
+        name: "bar",
+        units: 67,
+    },
+    {
+        name: "baz",
+        units: 81,
+    },
+    {
+        name: "hoge",
+        units: 38,
+    },
+    {
+        name: "plyo",
+        units: 28,
+    },
+    {
+        name: "hogera",
+        units: 59,
+    },
+];
+
+const dimensions = {
+    width: 450,
+    height: 300,
+};
 
 export const ProtvistaPdbValidation: React.FC<ProtvistaPdbProps> = React.memo(props => {
     console.log("tracks", props.pdb.tracks);
 
     const svgRef = React.useRef<SVGSVGElement>(null);
 
+    const [selection, setSelection] = React.useState<null | d3Module.Selection<
+        SVGSVGElement,
+        unknown,
+        null,
+        undefined
+    >>(null);
+
+    const y = d3
+        .scaleLinear()
+        .domain([0, d3.max(data, d => d.units) || 0])
+        .range([dimensions.height, 0]);
+
+    const x = d3
+        .scaleBand()
+        .domain(data.map(d => d.name))
+        .range([0, dimensions.width])
+        .paddingInner(0.05);
+
     React.useEffect(() => {
         if (!svgRef.current) return;
-
-        const svg = d3.select(svgRef.current);
-        svg.append("circle").attr("cx", 140).attr("cy", 70).attr("r", 40).style("fill", "red");
-        svg.append("circle").attr("cx", 300).attr("cy", 100).attr("r", 40).style("fill", "green");
-    }, []);
+        if (!selection) {
+            setSelection(d3.select(svgRef.current));
+        } else {
+            selection
+                .selectAll('rect')
+                .data(data)
+                .enter()
+                .append('rect')
+                .attr('width', x.bandwidth)
+                .attr('height', d => dimensions.height - y(d.units))
+                .attr('x', d => x(d.name) || '')
+                .attr('y', d => y(d.units))
+                .attr('fill', 'blue');
+        }
+    }, [selection, x, y]);
 
     return (
         <>
             <h2>This is the custom ProtvistaPdbValidation component</h2>
-            <svg ref={svgRef} width={5000} height={200} />
+            <svg ref={svgRef} width={dimensions.width} height={dimensions.height} />
             <ProtvistaPdb {...props} />
         </>
     );
