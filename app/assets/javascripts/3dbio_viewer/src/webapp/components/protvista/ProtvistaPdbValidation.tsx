@@ -38,8 +38,18 @@ const dimensions = {
 };
 
 export const ProtvistaPdbValidation: React.FC<ProtvistaPdbProps> = React.memo(props => {
-    console.log("tracks", props.pdb.tracks);
+    const [ref] = useBarChart()
 
+    return (
+        <>
+            <h2>This is the custom ProtvistaPdbValidation component</h2>
+            <svg ref={ref} width={dimensions.width} height={dimensions.height} />
+            <ProtvistaPdb {...props} />
+        </>
+    );
+});
+
+function useBarChart() {
     const svgRef = React.useRef<SVGSVGElement>(null);
 
     const [selection, setSelection] = React.useState<null | d3Module.Selection<
@@ -49,40 +59,38 @@ export const ProtvistaPdbValidation: React.FC<ProtvistaPdbProps> = React.memo(pr
         undefined
     >>(null);
 
-    const y = d3
-        .scaleLinear()
-        .domain([0, d3.max(data, d => d.units) || 0])
-        .range([dimensions.height, 0]);
-
-    const x = d3
-        .scaleBand()
-        .domain(data.map(d => d.name))
-        .range([0, dimensions.width])
-        .paddingInner(0.05);
-
     React.useEffect(() => {
-        if (!svgRef.current) return;
-        if (!selection) {
+        drawGraph()
+    })
+
+    const drawGraph = () => {
+        const x = d3
+            .scaleBand()
+            .domain(data.map(d => d.name))
+            .range([0, dimensions.width])
+            .paddingInner(0.05);
+        
+        const y = d3
+            .scaleLinear()
+            .domain([0, d3.max(data, d => d.units) || 0])
+            .range([dimensions.height, 0]);
+
+        if (!svgRef.current) {
+            return;
+        } else if (!selection) {
             setSelection(d3.select(svgRef.current));
         } else {
             selection
-                .selectAll('rect')
+                .selectAll("rect")
                 .data(data)
                 .enter()
-                .append('rect')
-                .attr('width', x.bandwidth)
-                .attr('height', d => dimensions.height - y(d.units))
-                .attr('x', d => x(d.name) || '')
-                .attr('y', d => y(d.units))
-                .attr('fill', 'blue');
+                .append("rect")
+                .attr("width", x.bandwidth)
+                .attr("height", d => dimensions.height - y(d.units))
+                .attr("x", d => x(d.name) || "")
+                .attr("y", d => y(d.units))
+                .attr("fill", "blue");
         }
-    }, [selection, x, y]);
-
-    return (
-        <>
-            <h2>This is the custom ProtvistaPdbValidation component</h2>
-            <svg ref={svgRef} width={dimensions.width} height={dimensions.height} />
-            <ProtvistaPdb {...props} />
-        </>
-    );
-});
+    }
+    return [svgRef]
+}
