@@ -52,13 +52,6 @@ export const ProtvistaPdbValidation: React.FC<ProtvistaPdbProps> = React.memo(pr
 function useBarChart() {
     const svgRef = React.useRef<SVGSVGElement>(null);
 
-    const [selection, setSelection] = React.useState<null | d3Module.Selection<
-        SVGSVGElement,
-        unknown,
-        null,
-        undefined
-    >>(null);
-
     React.useEffect(() => {
         const x = d3
             .scaleBand()
@@ -71,23 +64,18 @@ function useBarChart() {
             .domain([0, d3.max(data, d => d.units) || 0])
             .range([dimensions.height, 0]);
 
-        if (!svgRef.current) {
-            return;
-        } else if (!selection) {
-            setSelection(d3.select(svgRef.current));
-        } else {
-            selection
-                .selectAll("rect")
-                .data(data)
-                .enter()
-                .append("rect")
-                .attr("width", x.bandwidth)
-                .attr("height", d => dimensions.height - y(d.units))
-                .attr("x", d => x(d.name) || "")
-                .attr("y", d => y(d.units))
-                .attr("fill", "blue");
-        }
-    }, [selection]);
+        if (!svgRef.current) return;
+        d3.select(svgRef.current)
+            .selectAll("rect")
+            .data(data)
+            .enter()
+            .append("rect")
+            .attr("width", x.bandwidth)
+            .attr("height", d => dimensions.height - y(d.units))
+            .attr("x", d => x(d.name) || "")
+            .attr("y", d => y(d.units))
+            .attr("fill", "blue");
+    }, []);
 
     return svgRef;
 }
