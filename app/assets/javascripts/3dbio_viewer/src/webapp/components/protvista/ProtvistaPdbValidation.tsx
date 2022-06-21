@@ -38,7 +38,7 @@ const dimensions = {
 };
 
 export const ProtvistaPdbValidation: React.FC<ProtvistaPdbProps> = React.memo(props => {
-    const [ref] = useBarChart();
+    const ref = useBarChart();
 
     return (
         <>
@@ -60,10 +60,6 @@ function useBarChart() {
     >>(null);
 
     React.useEffect(() => {
-        drawGraph();
-    });
-
-    const drawGraph = () => {
         const x = d3
             .scaleBand()
             .domain(data.map(d => d.name))
@@ -91,6 +87,7 @@ function useBarChart() {
                 .attr("y", d => y(d.units))
                 .attr("fill", "blue");
         }
-    };
-    return [svgRef];
+    }, [selection]);
+
+    return svgRef;
 }
