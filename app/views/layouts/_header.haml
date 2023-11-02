@@ -15,12 +15,7 @@
               .dropdown-menu
                 %a.dropdown-item.active{:href => ws_path} HOME
                 %a.dropdown-item{:href => ws_covid19_path} COVID-19 Structural Hub
-                %a.dropdown-item{:href => ws_network_path} NETWORK
-                %a.dropdown-item{:href => ws_database_path} QUERY
-                %a.dropdown-item{:href => ws_api_path} API
-                %a.dropdown-item{:href => ws_submit_path} SUBMIT
-                %a.dropdown-item{:href => ws_help_path} HELP
-                %a.btn-contact.dropdown-item{:href => "mailto:help-3dbionotes@cnb.csic.es"} CONTACT US
+                %a.dropdown-item{:href => ws_viewer_path} VIEWER
       #Slogan.text-center.text-sm-center.text-md-center.text-lg-left.text-xl-left.d-sm-block.flex-grow-1
         %span#viewerSlogan
           An ELIXIR Recommended Interoperability Resource
@@ -33,5 +28,7 @@
           %img{:height => "45", :src => "/assets/CNB_logo-30fc3586b103c993eeacd7d1f9a0d02dbd445703f5ab29e8cc9e26a48d35ad0d.jpg", :alt => "CNB - Spanish National Centre for Biotechnology"}/
         %a{:href=>"https://instruct-eric.org/", :target => "_blank", :title => "Instruct-ERIC"}
           %img{:height => "44", :src => "/assets/instruct-eric-logo-noline.png", :alt => "Instruct-ERIC", :style => "margin-left: 19px;"}/
+        %a{:href=>"https://eoscfuture.eu/", :target => "_blank", :title => "EOSC Future"}
+          %img{:height => "53", :src => "/assets/eosc_future_logo.png", :alt => "EOSC Future", :style => "margin-left: 24px;"}/
         %a{:href=>"https://inb-elixir.es/", :target => "_blank", :title => "INB - Spanish National Bioinformatics Institute"}
           %img{:height => "53", :src => "/assets/inbelixir.png", :alt => "INB - Spanish National Bioinformatics Institute", :style => "margin-left: 24px;"}/
