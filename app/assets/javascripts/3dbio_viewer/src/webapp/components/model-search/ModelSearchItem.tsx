@@ -1,5 +1,5 @@
-import { withStyles, Tooltip } from "@material-ui/core";
-import InfoIcon from "@material-ui/icons/Info";
+import { withStyles, Tooltip } from "@mui/material";
+import InfoIcon from "@mui/icons-material/Info";
 import classnames from "classnames";
 import React from "react";
 import ReactImageFallback from "react-image-fallback";

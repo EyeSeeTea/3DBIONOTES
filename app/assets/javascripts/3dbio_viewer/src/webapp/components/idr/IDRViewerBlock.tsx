@@ -10,11 +10,11 @@ import {
     Plate,
     Screen,
 } from "../../../domain/entities/LigandImageData";
-import { Accordion, AccordionDetails, AccordionSummary, Typography } from "@material-ui/core";
+import { Accordion, AccordionDetails, AccordionSummary, Typography } from "@mui/material";
 import { ViewerTooltip } from "../viewer-tooltip/ViewerTooltip";
 import { useBooleanState } from "../../hooks/use-boolean";
 import { SVGPlate } from "./SVGPlate";
-import { ExpandMore as ExpandMoreIcon } from "@material-ui/icons";
+import { ExpandMore as ExpandMoreIcon } from "@mui/icons-material";
 import { HtmlTooltip } from "../HtmlTooltip";
 import { BlockComponentProps } from "../protvista/Protvista.types";
 import i18n from "../../utils/i18n";

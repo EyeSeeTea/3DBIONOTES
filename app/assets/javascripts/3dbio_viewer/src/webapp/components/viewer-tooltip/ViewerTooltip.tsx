@@ -1,5 +1,5 @@
 import React from "react";
-import { ClickAwayListener, Fade } from "@material-ui/core";
+import { ClickAwayListener, Fade } from "@mui/material";
 import { SmallHtmlTooltip } from "../HtmlTooltip";
 
 interface ViewerTooltipProps {

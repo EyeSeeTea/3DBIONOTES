@@ -4,7 +4,7 @@ import { Dropdown, DropdownProps } from "../dropdown/Dropdown";
 import { useBooleanState } from "../../hooks/use-boolean";
 import { AnnotationsTool } from "../annotations-tool/AnnotationsTool";
 import { Annotations } from "../../../domain/entities/Annotation";
-import { Build as BuildIcon } from "@material-ui/icons";
+import { Build as BuildIcon } from "@mui/icons-material";
 import { useAppContext } from "../AppContext";
 import { Pdb } from "../../../domain/entities/Pdb";
 import { LoaderKey } from "../RootViewerContents";

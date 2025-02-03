@@ -1,7 +1,7 @@
 import React from "react";
 import styled from "styled-components";
-import { DialogTitle, IconButton } from "@material-ui/core";
-import { Close, HelpOutline as HelpOutlineIcon } from "@material-ui/icons";
+import { DialogTitle, IconButton } from "@mui/material";
+import { Close, HelpOutline as HelpOutlineIcon } from "@mui/icons-material";
 import { HtmlTooltip, styles } from "./HtmlTooltip";
 
 interface DialogTitleHelpProps {

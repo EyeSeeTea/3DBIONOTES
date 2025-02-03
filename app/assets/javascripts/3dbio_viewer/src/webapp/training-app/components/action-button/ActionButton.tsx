@@ -1,4 +1,4 @@
-import EmojiObjectsIcon from "@material-ui/icons/EmojiObjects";
+import EmojiObjectsIcon from "@mui/icons-material/EmojiObjects";
 import React from "react";
 import styled from "styled-components";
 import i18n from "../../../utils/i18n";

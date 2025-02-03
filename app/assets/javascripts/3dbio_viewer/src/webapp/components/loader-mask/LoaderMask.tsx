@@ -1,5 +1,5 @@
 import React from "react";
-import { Backdrop, CircularProgress, makeStyles } from "@material-ui/core";
+import { Backdrop, CircularProgress, makeStyles } from "@mui/material";
 import styled from "styled-components";
 import { isDev } from "../../../routes";
 

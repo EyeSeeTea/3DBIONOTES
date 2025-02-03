@@ -1,6 +1,6 @@
 import _ from "lodash";
 import React, { useState } from "react";
-import InfoOutlinedIcon from "@material-ui/icons/InfoOutlined";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import { getEntityLinks, Pdb } from "../../domain/entities/Pdb";
 import { recordOfStyles } from "../../utils/ts-utils";
 import { Selection } from "../view-models/Selection";

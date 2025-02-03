@@ -19,9 +19,9 @@ import {
     TableRow,
     Typography,
     makeStyles,
-} from "@material-ui/core";
+} from "@mui/material";
 import { BasicNMRFragmentTarget, NMRFragmentTarget } from "../../../domain/entities/Protein";
-import { Close as CloseIcon, GetApp as GetAppIcon, Stop as StopIcon } from "@material-ui/icons";
+import { Close as CloseIcon, GetApp as GetAppIcon, Stop as StopIcon } from "@mui/icons-material";
 import { useAppContext } from "../AppContext";
 import { useBooleanState } from "../../hooks/use-boolean";
 import { LoaderMask } from "../loader-mask/LoaderMask";

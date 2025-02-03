@@ -1,4 +1,4 @@
-import DoneIcon from "@material-ui/icons/Done";
+import DoneIcon from "@mui/icons-material/Done";
 import React, { MouseEvent } from "react";
 import styled from "styled-components";
 import { getColor } from "../../../utils/colors";

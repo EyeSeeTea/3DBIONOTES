@@ -1,7 +1,8 @@
 import React from "react";
 import i18n from "../../utils/i18n";
-import { FilterList as FilterListIcon } from "@material-ui/icons";
-import { MenuItem, MenuList, Checkbox } from "@material-ui/core";
+import { FilterList as FilterListIcon } from "@mui/icons-material";
+import { MenuItem, MenuList, Checkbox } from "@mui/material";
+// FIXME: data-grid
 import { GridMenu } from "@material-ui/data-grid";
 import styled from "styled-components";
 import { StyledButton } from "../../training-app/components/action-button/ActionButton";

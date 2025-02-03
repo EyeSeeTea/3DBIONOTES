@@ -1,7 +1,7 @@
 import _ from "lodash";
 import React from "react";
-import { MenuItem } from "@material-ui/core";
-import { ExpandMore, ExpandLess, Done, Close as CloseIcon } from "@material-ui/icons";
+import { MenuItem } from "@mui/material";
+import { ExpandMore, ExpandLess, Done, Close as CloseIcon } from "@mui/icons-material";
 import { useBooleanState } from "../../hooks/use-boolean";
 import { PopperMenu } from "./PopperMenu";
 import { StyledButton } from "../../training-app/components/action-button/ActionButton";

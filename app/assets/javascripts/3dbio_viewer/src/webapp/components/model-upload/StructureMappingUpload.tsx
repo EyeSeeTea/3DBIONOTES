@@ -1,7 +1,8 @@
 import React from "react";
 import _ from "lodash";
-import { Dialog, DialogContent, DialogTitle, IconButton } from "@material-ui/core";
-import { Close } from "@material-ui/icons";
+import { Dialog, DialogContent, DialogTitle, IconButton } from "@mui/material";
+import { Close } from "@mui/icons-material";
+// FIXME: data-grid
 import { DataGrid, DataGridProps } from "@material-ui/data-grid";
 
 import i18n from "../../utils/i18n";

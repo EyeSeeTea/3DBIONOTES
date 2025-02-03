@@ -1,7 +1,7 @@
 import _ from "lodash";
 import React from "react";
 import styled from "styled-components";
-import { TooltipProps, Typography } from "@material-ui/core";
+import { TooltipProps, Typography } from "@mui/material";
 import { Plate, Well } from "../../../domain/entities/LigandImageData";
 import { HtmlTooltip } from "../HtmlTooltip";
 import { plateShadowImage } from "./plate-shadow-image";

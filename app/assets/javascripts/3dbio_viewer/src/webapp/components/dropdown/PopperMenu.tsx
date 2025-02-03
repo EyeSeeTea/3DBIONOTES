@@ -1,5 +1,5 @@
 import React from "react";
-import { ClickAwayListener, Grow, MenuList, Paper, Popper } from "@material-ui/core";
+import { ClickAwayListener, Grow, MenuList, Paper, Popper } from "@mui/material";
 
 export interface PropperMenuProps {
     isOpen: boolean;

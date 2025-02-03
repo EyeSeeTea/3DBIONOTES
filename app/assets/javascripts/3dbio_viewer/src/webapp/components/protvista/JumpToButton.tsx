@@ -1,6 +1,6 @@
 import React from "react";
 import _ from "lodash";
-import { ArrowForward as ArrowForwardIcon } from "@material-ui/icons";
+import { ArrowForward as ArrowForwardIcon } from "@mui/icons-material";
 import { Dropdown, DropdownProps } from "../dropdown/Dropdown";
 import { BlockDef } from "./Protvista.types";
 import { sendAnalytics } from "../../utils/analytics";

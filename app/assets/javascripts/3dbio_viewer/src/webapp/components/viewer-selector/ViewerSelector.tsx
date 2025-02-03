@@ -1,6 +1,6 @@
 import React from "react";
 import _ from "lodash";
-import { Search } from "@material-ui/icons";
+import { Search } from "@mui/icons-material";
 
 import { useBooleanState } from "../../hooks/use-boolean";
 import i18n from "../../utils/i18n";

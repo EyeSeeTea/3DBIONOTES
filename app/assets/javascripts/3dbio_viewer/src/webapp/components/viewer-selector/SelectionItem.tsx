@@ -1,6 +1,6 @@
 import React from "react";
-import { IconButton } from "@material-ui/core";
-import { Close, Visibility, VisibilityOff } from "@material-ui/icons";
+import { IconButton } from "@mui/material";
+import { Close, Visibility, VisibilityOff } from "@mui/icons-material";
 import { DbItem, Selection } from "../../view-models/Selection";
 import i18n from "../../utils/i18n";
 

@@ -1,9 +1,9 @@
-import AddIcon from "@material-ui/icons/Add";
-import CloseIcon from "@material-ui/icons/Close";
-import DragIndicatorIcon from "@material-ui/icons/DragIndicator";
-import HomeIcon from "@material-ui/icons/Home";
-import MinimizeIcon from "@material-ui/icons/Minimize";
-import SettingsIcon from "@material-ui/icons/Settings";
+import AddIcon from "@mui/icons-material/Add";
+import CloseIcon from "@mui/icons-material/Close";
+import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
+import HomeIcon from "@mui/icons-material/Home";
+import MinimizeIcon from "@mui/icons-material/Minimize";
+import SettingsIcon from "@mui/icons-material/Settings";
 import React from "react";
 import styled from "styled-components";
 import { Tooltip, TooltipText, TooltipWrapper } from "../tooltip/Tooltip";

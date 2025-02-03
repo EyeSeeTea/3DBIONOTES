@@ -1,7 +1,7 @@
 import _ from "lodash";
 import React from "react";
 import styled from "styled-components";
-import { Accordion, AccordionDetails, AccordionSummary } from "@material-ui/core";
+import { Accordion, AccordionDetails, AccordionSummary } from "@mui/material";
 import { useBooleanState } from "../../hooks/use-boolean";
 import "./FrameViewer.css";
 import { TrackDef } from "../protvista/Protvista.types";

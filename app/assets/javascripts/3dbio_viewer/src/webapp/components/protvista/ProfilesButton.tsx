@@ -1,6 +1,6 @@
 import _ from "lodash";
 import React from "react";
-import { Category as CategoryIcon } from "@material-ui/icons";
+import { Category as CategoryIcon } from "@mui/icons-material";
 import { Dropdown, DropdownProps } from "../dropdown/Dropdown";
 import { Profile, ProfileId, profiles } from "../../../domain/entities/Profile";
 import { sendAnalytics } from "../../utils/analytics";

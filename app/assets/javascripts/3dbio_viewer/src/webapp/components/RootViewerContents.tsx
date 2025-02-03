@@ -1,7 +1,7 @@
 import _ from "lodash";
 import React from "react";
 import styled from "styled-components";
-import { Fab } from "@material-ui/core";
+import { Fab } from "@mui/material";
 import { ResizableBox, ResizableBoxProps, ResizeCallbackData } from "react-resizable";
 import { Viewers } from "./viewers/Viewers";
 import { MolecularStructure } from "./molecular-structure/MolecularStructure";

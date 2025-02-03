@@ -1,9 +1,9 @@
 import _ from "lodash";
 import React, { useCallback, useState, useRef } from "react";
-import ToggleButtonGroup from "@material-ui/lab/ToggleButtonGroup";
-import ToggleButton from "@material-ui/lab/ToggleButton";
-import { Box, CircularProgress, Dialog, DialogContent } from "@material-ui/core";
-import { Description as DescriptionIcon, Edit as EditIcon } from "@material-ui/icons";
+import ToggleButtonGroup from "@mui/lab/ToggleButtonGroup";
+import ToggleButton from "@mui/lab/ToggleButton";
+import { Box, CircularProgress, Dialog, DialogContent } from "@mui/material";
+import { Description as DescriptionIcon, Edit as EditIcon } from "@mui/icons-material";
 import {
     AnnotationIndex,
     indexValues,
