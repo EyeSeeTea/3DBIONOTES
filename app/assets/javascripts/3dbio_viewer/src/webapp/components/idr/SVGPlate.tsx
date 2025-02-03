@@ -138,7 +138,7 @@ export const SVGPlate: React.FC<SVGPlateProps> = React.memo(({ plate, idx }) => 
                     disableTouchListener
                     title={tooltipContent}
                     placement={tooltipPlacement}
-                    interactive
+                    // interactive
                 >
                     <span></span>
                 </HtmlTooltip>

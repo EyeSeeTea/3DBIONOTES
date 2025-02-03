@@ -49,7 +49,7 @@ export const NMRDialog: React.FC<NMRDialogProps> = React.memo(props => {
     const [isSaving, savingActions] = useBooleanState();
     const [isLoading, loadingActions] = useBooleanState();
 
-    const classes = useStyles();
+    // const classes = useStyles();
 
     const nmrMethod = nmrSource?.methods[0];
 
@@ -89,7 +89,9 @@ export const NMRDialog: React.FC<NMRDialogProps> = React.memo(props => {
                 isSaving={isSaving}
                 hideSaving={savingActions.close}
             />
-            <div className={classes.bottomProgress}>{isLoading && <StyledLinearProgress />}</div>
+            <div className={/*classes.bottomProgress*/ ""}>
+                {isLoading && <StyledLinearProgress />}
+            </div>
         </Content>
     ) : (
         <Typography>{i18n.t("Unable to retrieve NMR")}</Typography>
@@ -149,10 +151,10 @@ const Toolbar: React.FC<ToolbarProps> = React.memo(props => {
         hideSaving,
     });
 
-    const classes = useStyles();
+    // const classes = useStyles();
 
     return (
-        <div className={classes.toolbar}>
+        <div className={/*classes.toolbar*/ ""}>
             <ExportButton isProcessing={isSaving} onClick={onClick} stop={stopSaving} />
             <TablePagination
                 component="div"
@@ -173,10 +175,10 @@ interface ExportButtonProps {
 }
 
 const ExportButton: React.FC<ExportButtonProps> = React.memo(({ isProcessing, onClick, stop }) => {
-    const classes = useStyles();
+    // const classes = useStyles();
 
     return (
-        <div className={classes.exportButton}>
+        <div className={/*classes.exportButton*/ ""}>
             <Button
                 variant="outlined"
                 disabled={isProcessing}
@@ -190,9 +192,9 @@ const ExportButton: React.FC<ExportButtonProps> = React.memo(({ isProcessing, on
             </Button>
 
             {isProcessing && (
-                <div className={classes.exportStopButton} onClick={stop}>
+                <div className={/*classes.exportStopButton*/ ""} onClick={stop}>
                     <StyledCircularProgress size={20} />
-                    <StopIcon color="inherit" className={classes.stop} />
+                    <StopIcon color="inherit" className={/*classes.stop*/ ""} />
                 </div>
             )}
         </div>
@@ -380,31 +382,31 @@ function useToolbar(props: {
     return { handleChangePage, handleChangeRowsPerPage, onClick, stopSaving };
 }
 
-const useStyles = makeStyles({
-    toolbar: {
-        display: "flex",
-        justifyContent: "space-between",
-        paddingLeft: "1em",
-        margin: "0.5em 0 0.25em",
-    },
-    exportButton: {
-        display: "flex",
-        alignItems: "center",
-        color: "#607d8b",
-        position: "relative",
-        justifyContent: "center",
-    },
-    exportStopButton: {
-        cursor: "pointer",
-        display: "flex",
-        alignItems: "center",
-        color: "#009688",
-        position: "absolute",
-        justifyContent: "center",
-    },
-    stop: { position: "absolute", fontSize: "14px" },
-    bottomProgress: { height: "4px" },
-});
+// const useStyles = makeStyles({
+//     toolbar: {
+//         display: "flex",
+//         justifyContent: "space-between",
+//         paddingLeft: "1em",
+//         margin: "0.5em 0 0.25em",
+//     },
+//     exportButton: {
+//         display: "flex",
+//         alignItems: "center",
+//         color: "#607d8b",
+//         position: "relative",
+//         justifyContent: "center",
+//     },
+//     exportStopButton: {
+//         cursor: "pointer",
+//         display: "flex",
+//         alignItems: "center",
+//         color: "#009688",
+//         position: "absolute",
+//         justifyContent: "center",
+//     },
+//     stop: { position: "absolute", fontSize: "14px" },
+//     bottomProgress: { height: "4px" },
+// });
 
 interface SetNMRPagination {
     setPage: React.Dispatch<React.SetStateAction<number>>;

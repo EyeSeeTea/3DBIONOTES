@@ -56,7 +56,7 @@ export const ModelSearchItem: React.FC<{
 
             <div className="id">
                 {item.id}
-                <HtmlTooltip title={description} style={tooltipStyles.icon} interactive>
+                <HtmlTooltip title={description} style={tooltipStyles.icon} /*interactive*/>
                     <InfoIcon />
                 </HtmlTooltip>
             </div>
@@ -95,14 +95,16 @@ const DescriptionItem: React.FC<DescriptionItemProps> = React.memo(props => {
     );
 });
 
-const HtmlTooltip = withStyles(theme => ({
-    tooltip: {
-        backgroundColor: "#f5f5f9",
-        color: "rgba(0, 0, 0, 0.87)",
-        fontSize: theme.typography.pxToRem(12),
-        border: "1px solid #dadde9",
-    },
-}))(Tooltip);
+const HtmlTooltip = Tooltip;
+
+// const HtmlTooltip = withStyles(theme => ({
+//     tooltip: {
+//         backgroundColor: "#f5f5f9",
+//         color: "rgba(0, 0, 0, 0.87)",
+//         fontSize: theme.typography.pxToRem(12),
+//         border: "1px solid #dadde9",
+//     },
+// }))(Tooltip);
 
 const tooltipStyles = {
     icon: { color: "#123546", marginLeft: 5 },

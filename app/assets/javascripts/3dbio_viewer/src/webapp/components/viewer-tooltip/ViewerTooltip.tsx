@@ -22,7 +22,7 @@ export const ViewerTooltip: React.FC<ViewerTooltipProps> = ({
             <SmallHtmlTooltip
                 title={title}
                 placement="right-end"
-                interactive
+                // interactive
                 TransitionComponent={Fade}
                 TransitionProps={{ timeout: 600 }}
                 open={showTooltip}

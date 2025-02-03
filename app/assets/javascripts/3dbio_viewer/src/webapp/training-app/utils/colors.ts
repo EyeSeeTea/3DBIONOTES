@@ -1,6 +1,14 @@
 type Dictionary<T> = Record<string, T>;
 
-type Color = "primary" | "secondary" | "default" | "inherit";
+type Color =
+    | "primary"
+    | "secondary"
+    | "default"
+    | "inherit"
+    | "error"
+    | "success"
+    | "info"
+    | "warning";
 type ColorPalette = "main" | "light" | "dark";
 
 const theme: Dictionary<Dictionary<string>> = {
@@ -15,6 +23,27 @@ const theme: Dictionary<Dictionary<string>> = {
     dark: {
         primary: "#93d2f1",
         secondary: "#fff",
+    },
+    // Temporal patch just to make @mui work
+    inherit: {
+        primary: "inherit",
+        secondary: "inherit",
+    },
+    error: {
+        primary: "#f44336",
+        secondary: "#e57373",
+    },
+    success: {
+        primary: "#4caf50",
+        secondary: "#81c784",
+    },
+    info: {
+        primary: "#2196f3",
+        secondary: "#64b5f6",
+    },
+    warning: {
+        primary: "#ff9800",
+        secondary: "#ffb74d",
     },
 };
 

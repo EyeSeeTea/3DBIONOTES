@@ -2,20 +2,23 @@ import { Theme, Typography, withStyles } from "@mui/material";
 import { Tooltip } from "@mui/material";
 import styled from "styled-components";
 
-export const SmallHtmlTooltip = withStyles((theme: Theme) => ({
-    tooltip: {
-        backgroundColor: "#f5f5f9",
-        color: "rgba(0, 0, 0, 0.87)",
-        fontSize: theme.typography.pxToRem(12),
-        border: "1px solid #dadde9",
-    },
-}))(Tooltip);
+export const SmallHtmlTooltip = Tooltip;
+export const HtmlTooltip = Tooltip;
 
-export const HtmlTooltip = withStyles((_theme: Theme) => ({
-    tooltip: {
-        maxWidth: 600,
-    },
-}))(SmallHtmlTooltip);
+// export const SmallHtmlTooltip = withStyles((theme: Theme) => ({
+//     tooltip: {
+//         backgroundColor: "#f5f5f9",
+//         color: "rgba(0, 0, 0, 0.87)",
+//         fontSize: theme.typography.pxToRem(12),
+//         border: "1px solid #dadde9",
+//     },
+// }))(Tooltip);
+
+// export const HtmlTooltip = withStyles((_theme: Theme) => ({
+//     tooltip: {
+//         maxWidth: 600,
+//     },
+// }))(SmallHtmlTooltip);
 
 export const TooltipTypography = styled(Typography)`
     &.MuiTypography-body2 {
