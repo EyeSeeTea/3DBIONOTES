@@ -11,7 +11,7 @@ import {
 } from "../../view-models/Selection";
 import {
     applySelectionChangesToPlugin,
-    checkModelUrl,
+    checkMainModelUrl,
     checkUploadedModelUrl,
     getErrorByStatus,
     getLigandView,
@@ -257,7 +257,7 @@ export function usePluginRef(options: Options) {
             }
 
             async function loadFromPdb(pdbId: string, element: HTMLDivElement) {
-                await checkModelUrl(pdbId, "pdb")
+                await checkMainModelUrl(pdbId, "pdb")
                     .then(res => {
                         if (res.loaded) {
                             plugin.render(element, initParams);
@@ -283,7 +283,7 @@ export function usePluginRef(options: Options) {
             }
 
             async function loadEmdbModel(emdbId: string, plugin: PDBeMolstarPlugin): Promise<void> {
-                await checkModelUrl(emdbId, "emdb").then(async res => {
+                await checkMainModelUrl(emdbId, "emdb").then(async res => {
                     if (res.loaded) {
                         await updateLoader(
                             "loadModel",
@@ -305,7 +305,7 @@ export function usePluginRef(options: Options) {
                 emdbId: string,
                 element: HTMLDivElement
             ) {
-                await checkModelUrl(pdbId, "pdb")
+                await checkMainModelUrl(pdbId, "pdb")
                     .then(res => {
                         if (res.loaded) {
                             return plugin

@@ -12,7 +12,8 @@ import {
     getItemSelector,
     getMainChanges,
     getMainItem,
-    getRefinedModelId,
+    getRefinedModelIds,
+    MainType,
     RefinedModelType,
     Selection,
     setMainItem,
@@ -33,14 +34,21 @@ import { usePluginRef } from "./usePluginRef";
 import i18n from "../../utils/i18n";
 import "./molstar.css";
 import "./molstar-light.css";
+import { getValidatedJSON } from "../../../data/request-utils";
+import { refinedModelCodec } from "../../../data/RefinedModels";
+import { getResults, paginationCodec } from "../../../data/codec-utils";
 
-export const urls: Record<Type, (id: string) => string> = {
+export const urls: Record<MainType, (id: string) => string> = {
     pdb: (id: string) => `https://www.ebi.ac.uk/pdbe/model-server/v1/${id}/full?encoding=cif`,
     emdb: (id: string) => `https://maps.rcsb.org/em/${id}/cell?detail=3`,
-    pdbRedo: (id: string) => `https://pdb-redo.eu/db/${id}/${id}_final.cif`,
-    cstf: (id: string) =>
-        `https://raw.githubusercontent.com/thorn-lab/coronavirus_structural_task_force/master/pdb/surface_glycoprotein/SARS-CoV-2/${id}/isolde/${id}_refine_7.cif`, //github?
 };
+
+const REFINED_MODELS_ENDPOINT = `${routes.bionotes}/bws/api/refinedModels/`;
+
+type RefinedModelsArgs = { pdbId: string; emdbId: Maybe<string>; methodType: RefinedModelType };
+
+const refinedModelArgsToString = (args: RefinedModelsArgs) =>
+    `${[args.pdbId, args.emdbId, args.methodType].filter(Boolean).join(", ")}`;
 
 export const loaderErrors = {
     pdbNotLoaded: i18n.t("PDB molstar did not load"),
@@ -56,6 +64,10 @@ export const loaderErrors = {
     pdbRequest: (url: string, status: number) =>
         i18n.t(`Error loading PDB model: url=${url} - ${status}`),
     request: (url: string, status: number) => i18n.t(`Error loading model: url=${url} - ${status}`),
+    refinedModelNotFound: (args: RefinedModelsArgs) =>
+        i18n.t(`Refined model not found: ${JSON.stringify(args)}`),
+    refinedModelUnexpectedError: (args: RefinedModelsArgs) =>
+        i18n.t(`Unexpected error while loading refined model: ${refinedModelArgsToString(args)}`),
 };
 
 const errorsKeys = _.mapValues(loaderErrors, (_v, k) => k);
@@ -169,22 +181,36 @@ export function usePdbePlugin(options: MolecularStructureProps) {
             const validSelection =
                 newSelection.type === "free"
                     ? Promise.all(
-                          newSelection.refinedModels.map(
-                              async model =>
-                                  await checkModelUrl(getRefinedModelId(model), model.type).then(
-                                      res => {
-                                          if (res.loaded) return model;
-                                          else {
-                                              pdbePlugin.canvas.showToast({
-                                                  title: i18n.t("Error"),
-                                                  message: getErrorByStatus(model.id, res.status),
-                                                  key: errorKeyByStatus(res.status),
-                                              });
-                                              return undefined;
-                                          }
-                                      }
-                                  )
-                          )
+                          newSelection.refinedModels.map(async model => {
+                              const { pdbId, emdbId } = getRefinedModelIds(model);
+                              const args = {
+                                  pdbId: pdbId,
+                                  emdbId: emdbId,
+                                  methodType: model.type,
+                              };
+                              const filenameUrl = await getRefinedModelUrl(args).catch(err => {
+                                  pdbePlugin.canvas.showToast({
+                                      title: i18n.t("Error"),
+                                      message: loaderErrors.refinedModelUnexpectedError(args),
+                                      key: errorsKeys.refinedModelUnexpectedError,
+                                  });
+                                  return Promise.reject(err);
+                              });
+                              return await checkModelUrl({
+                                  id: pdbId,
+                                  url: filenameUrl,
+                              }).then(res => {
+                                  if (res.loaded) return model;
+                                  else {
+                                      pdbePlugin.canvas.showToast({
+                                          title: i18n.t("Error"),
+                                          message: getErrorByStatus(model.id, res.status),
+                                          key: errorKeyByStatus(res.status),
+                                      });
+                                      return undefined;
+                                  }
+                              });
+                          })
                       ).then(models => _.compact(models))
                     : Promise.resolve([]);
 
@@ -388,17 +414,30 @@ export async function applySelectionChangesToPlugin(
     };
 
     const loadRefinedItems = async (items: DbItem<RefinedModelType>[]) => {
+        // TODO: Transform url
         for (let i = 0; i < items.length; i++) {
             const item = items[i];
             if (item) {
-                const id: string = getRefinedModelId(item);
-                await checkModelUrl(id, item.type).then(async res => {
+                const { pdbId, emdbId } = getRefinedModelIds(item);
+                const args = {
+                    pdbId: pdbId,
+                    emdbId: emdbId,
+                    methodType: item.type,
+                };
+                const filenameUrl = await getRefinedModelUrl(args).catch(err => {
+                    plugin.canvas.showToast({
+                        title: i18n.t("Error"),
+                        message: loaderErrors.refinedModelUnexpectedError(args),
+                        key: errorsKeys.refinedModelUnexpectedError,
+                    });
+                    return Promise.reject(err);
+                });
+                await checkModelUrl({ id: item.id, url: filenameUrl }).then(async res => {
                     if (res.loaded) {
-                        const url = urls[item.type](id);
                         const loadParams: LoadParams = {
-                            url,
+                            url: filenameUrl,
                             label: item.id,
-                            format: "mmcif",
+                            format: filenameUrl.endsWith(".pdb") ? "pdb" : "mmcif",
                             isBinary: false,
                             assemblyId: "1",
                         };
@@ -412,7 +451,7 @@ export async function applySelectionChangesToPlugin(
                     } else
                         plugin.canvas.showToast({
                             title: i18n.t("Error"),
-                            message: getErrorByStatus(id, res.status),
+                            message: getErrorByStatus(item.id, res.status),
                             key: errorKeyByStatus(res.status),
                         });
                 });
@@ -427,7 +466,9 @@ export async function applySelectionChangesToPlugin(
     const pdbs = added.filter(item => item.type === "pdb");
     const emdbs = added.filter(item => item.type === "emdb");
     const pdbRedo = added.filter(item => item.type === "pdbRedo");
-    const cstf = added.filter(item => item.type === "cstf");
+    const isolde = added.filter(item => item.type === "isolde");
+    const refmac = added.filter(item => item.type === "refmac");
+    const phenix = added.filter(item => item.type === "phenix");
 
     const mainPdb = newItems.find(item => item.type === "pdb");
     const mainEmdb = newItems.find(item => item.type === "emdb");
@@ -469,9 +510,9 @@ export async function applySelectionChangesToPlugin(
         const item = pdbs[i];
         if (item) {
             const pdbId = item.id;
-            await checkModelUrl(pdbId, "pdb").then(async res => {
+            const url = urls.pdb(pdbId);
+            await checkModelUrl({ id: pdbId, url }).then(async res => {
                 if (res.loaded) {
-                    const url = urls.pdb(pdbId);
                     const loadParams: LoadParams = {
                         url,
                         label: pdbId,
@@ -507,11 +548,12 @@ export async function applySelectionChangesToPlugin(
         if (item) {
             const emdbId = item.id;
             if (items.some(item => item.type === "emdb" && item.id === emdbId)) continue;
-            await checkModelUrl(emdbId, "emdb").then(async res => {
+            const url = urls.emdb(emdbId);
+            await checkModelUrl({ id: emdbId, url }).then(async res => {
                 if (res.loaded) {
                     await updateLoader(
                         "loadModel",
-                        loadEmdb(plugin, urls.emdb(item.id)),
+                        loadEmdb(plugin, url),
                         emdbs.length > 1
                             ? i18n.t(`Loading EMDB (${i + 1}/${emdbs.length})...`)
                             : i18n.t("Loading EMDB...")
@@ -529,7 +571,9 @@ export async function applySelectionChangesToPlugin(
         }
     }
 
-    ([pdbRedo, cstf] as DbItem<RefinedModelType>[][]).forEach(items => loadRefinedItems(items));
+    ([pdbRedo, isolde, refmac, phenix] as DbItem<RefinedModelType>[][]).forEach(items =>
+        loadRefinedItems(items)
+    );
 
     // Remove unused elements
     const itemsAfterUpdate = getCurrentItems(plugin);
@@ -605,10 +649,46 @@ function getId<T extends { id: string }>(obj: T): string {
     return obj.id;
 }
 
-export async function checkModelUrl(id: Maybe<string>, modelType: Type): Promise<Response> {
+enum refinedMethods {
+    pdbRedo = "PDB-Redo",
+    isolde = "Isolde",
+    refmac = "Refmac",
+    phenix = "PHENIX",
+}
+
+//FIX: Data layer interference
+export async function getRefinedModelUrl(args: RefinedModelsArgs): Promise<string> {
+    const { pdbId, emdbId, methodType } = args;
+    const emdbParam = emdbId ? `&emdbId=EMD-${emdbId}` : "";
+    const url = `${REFINED_MODELS_ENDPOINT}?pdbId=${pdbId.toUpperCase()}${emdbParam}&methodType=${
+        refinedMethods[methodType]
+    }`;
+    console.debug("Requesting refined model URL from endpoint: " + url);
+
+    const refinedModels = await getValidatedJSON(url, paginationCodec(refinedModelCodec))
+        .map(getResults)
+        .toPromise();
+
+    const coincidence = refinedModels[0];
+    if (!coincidence) {
+        throw new Error(loaderErrors.refinedModelNotFound(args));
+    }
+
+    if (refinedModels.length > 1) {
+        console.warn(
+            `Multiple refined models found for ${pdbId} with emdbId ${
+                emdbId ?? "NULL"
+            } and methodType ${methodType}. Using the first one.`
+        );
+    }
+
+    return coincidence.filename.replaceAll("https://cci.lbl.gov/static/data/", "/cci/");
+}
+
+export async function checkModelUrl(args: { id: Maybe<string>; url: string }): Promise<Response> {
+    const { id, url } = args;
     if (!id) return { loaded: true, status: 404 };
 
-    const url = urls[modelType](id);
     //method HEAD makes 404 be 200 anyways
     return await fetch(url, { method: "GET", cache: "force-cache" })
         .then(res => {
@@ -624,8 +704,15 @@ export async function checkModelUrl(id: Maybe<string>, modelType: Type): Promise
         }); //we are only caching if url exist
 }
 
+export async function checkMainModelUrl(
+    id: string,
+    type: MainType
+): Promise<{ loaded: boolean; status: number }> {
+    return checkModelUrl({ id, url: urls[type](id) });
+}
+
 export async function checkUploadedModelUrl(url: string): Promise<Response> {
-    return fetch(url, { method: "HEAD", cache: "force-cache" }).then(res => {
+    return fetch(url, { method: "GET", cache: "force-cache" }).then(res => {
         if (res.ok && res.status != 404 && res.status != 500 && res.status != 503)
             return { loaded: true, status: res.status };
         else {
