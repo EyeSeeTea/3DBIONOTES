@@ -4,6 +4,11 @@ import { Ligand } from "../../domain/entities/Ligand";
 import { PdbInfo } from "../../domain/entities/PdbInfo";
 import { Maybe } from "../../utils/ts-utils";
 import { UploadedParams } from "../components/viewer-selector/viewer-selector.hooks";
+import {
+    refinedModelsType,
+    RefinedModelType,
+    typeIsRefinedModelType,
+} from "../../domain/entities/RefinedModel";
 
 /* Selection object from/to string.
 
@@ -18,8 +23,6 @@ const mainSeparator = "+";
 const overlaySeparator = "|";
 const chainSeparator = ":";
 
-export const refinedModels = ["pdbRedo", "isolde", "refmac", "phenix"] as const;
-export type RefinedModelType = typeof refinedModels[number];
 export type MainType = "pdb" | "emdb";
 
 export type Type = MainType | RefinedModelType;
@@ -118,10 +121,6 @@ function splitPdbIdb(main: string): Array<Maybe<string>> {
     }
 }
 
-function typeIsRefinedModelType(type: string): type is RefinedModelType {
-    return refinedModels.includes(type as RefinedModelType);
-}
-
 function getRefinedModelFromLabel(
     label: string[]
 ): { pdbId: Maybe<string>; emdbId: Maybe<string>; type: Maybe<string> } {
@@ -161,8 +160,10 @@ function buildRefinedModels(items: string[]): DbItem<RefinedModelType>[] {
 export function getSelectionFromString(items: Maybe<string>): Selection {
     const [main = "", overlay = ""] = (items || "").split(overlaySeparator, 2);
     const overlayIds = overlay.split(mainSeparator);
-    const overlayRefined = overlayIds.filter(i => refinedModels.some(type => i.includes(type)));
-    const overlayNotRefined = overlayIds.filter(i => !refinedModels.some(type => i.includes(type)));
+    const overlayRefined = overlayIds.filter(i => refinedModelsType.some(type => i.includes(type)));
+    const overlayNotRefined = overlayIds.filter(
+        i => !refinedModelsType.some(type => i.includes(type))
+    );
     const refinedDbModels = buildRefinedModels(overlayRefined);
     const [mainPdbRich = "", mainEmdbRichId] = splitPdbIdb(main);
     const [mainPdbRichId, chainId, ligandId] = mainPdbRich.split(chainSeparator, 3);

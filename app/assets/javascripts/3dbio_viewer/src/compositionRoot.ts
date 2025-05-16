@@ -26,6 +26,8 @@ import { SaveNMRTargetUseCase } from "./domain/usecases/SaveNMRTargetUseCase";
 import { NMRApiRepository } from "./data/repositories/NMRApiRepository";
 import { GetSourcesUseCase } from "./domain/usecases/GetSourcesUseCase";
 import { SourcesApiRepository } from "./data/repositories/SourcesApiRepository";
+import { RefinedModelApiRepository } from "./data/repositories/RefinedModelApiRepository";
+import { GetRefinedModelUseCase } from "./domain/usecases/GetRefinedModelUseCase";
 
 export function getCompositionRoot() {
     const pdbRepository = new ApiPdbRepository();
@@ -40,6 +42,7 @@ export function getCompositionRoot() {
     const annotationsExportRepository = new AnnotationsExportApiRepository();
     const nmrRepository = new NMRApiRepository();
     const sourcesRepository = new SourcesApiRepository();
+    const refinedModelRepository = new RefinedModelApiRepository();
 
     return {
         getSources: new GetSourcesUseCase(sourcesRepository),
@@ -60,6 +63,7 @@ export function getCompositionRoot() {
         getNetwork: new GetNetworkUseCase(networkRepository),
         getPartialNMR: new GetPartialNMRTargetUseCase(nmrRepository),
         saveNMR: new SaveNMRTargetUseCase(nmrRepository),
+        getRefinedModel: new GetRefinedModelUseCase(refinedModelRepository),
     };
 }
 

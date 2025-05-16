@@ -14,11 +14,14 @@ import {
     getMainItem,
     getRefinedModelIds,
     MainType,
-    RefinedModelType,
     Selection,
     setMainItem,
     Type,
 } from "../../view-models/Selection";
+import {
+    refinedModelArgsToString,
+    RefinedModelGetArgs,
+} from "../../../domain/repositories/RefinedModelRepository";
 import { debugVariable } from "../../../utils/debug";
 import { useReference } from "../../hooks/use-reference";
 import { useAppContext } from "../AppContext";
@@ -34,21 +37,12 @@ import { usePluginRef } from "./usePluginRef";
 import i18n from "../../utils/i18n";
 import "./molstar.css";
 import "./molstar-light.css";
-import { getValidatedJSON } from "../../../data/request-utils";
-import { refinedModelCodec } from "../../../data/RefinedModels";
-import { getResults, paginationCodec } from "../../../data/codec-utils";
+import { RefinedModelType } from "../../../domain/entities/RefinedModel";
 
 export const urls: Record<MainType, (id: string) => string> = {
     pdb: (id: string) => `https://www.ebi.ac.uk/pdbe/model-server/v1/${id}/full?encoding=cif`,
     emdb: (id: string) => `https://maps.rcsb.org/em/${id}/cell?detail=3`,
 };
-
-const REFINED_MODELS_ENDPOINT = `${routes.bionotes}/bws/api/refinedModels/`;
-
-type RefinedModelsArgs = { pdbId: string; emdbId: Maybe<string>; methodType: RefinedModelType };
-
-const refinedModelArgsToString = (args: RefinedModelsArgs) =>
-    `${[args.pdbId, args.emdbId, args.methodType].filter(Boolean).join(", ")}`;
 
 export const loaderErrors = {
     pdbNotLoaded: i18n.t("PDB molstar did not load"),
@@ -64,9 +58,7 @@ export const loaderErrors = {
     pdbRequest: (url: string, status: number) =>
         i18n.t(`Error loading PDB model: url=${url} - ${status}`),
     request: (url: string, status: number) => i18n.t(`Error loading model: url=${url} - ${status}`),
-    refinedModelNotFound: (args: RefinedModelsArgs) =>
-        i18n.t(`Refined model not found: ${JSON.stringify(args)}`),
-    refinedModelUnexpectedError: (args: RefinedModelsArgs) =>
+    refinedModelUnexpectedError: (args: RefinedModelGetArgs) =>
         i18n.t(`Unexpected error while loading refined model: ${refinedModelArgsToString(args)}`),
 };
 
@@ -170,6 +162,16 @@ export function usePdbePlugin(options: MolecularStructureProps) {
         pdbePlugin,
     ]);
 
+    const getRefinedModelUrl = React.useCallback(
+        (args: RefinedModelGetArgs): Promise<string> => {
+            return compositionRoot.getRefinedModel
+                .execute(args)
+                .map(refinedModel => refinedModel.filenameUrl)
+                .toPromise();
+        },
+        [compositionRoot]
+    );
+
     const updateSelection = React.useCallback(
         (currentSelection: Selection, newSelection: Selection) => {
             if (!pdbePlugin) return;
@@ -186,7 +188,7 @@ export function usePdbePlugin(options: MolecularStructureProps) {
                               const args = {
                                   pdbId: pdbId,
                                   emdbId: emdbId,
-                                  methodType: model.type,
+                                  method: model.type,
                               };
                               const filenameUrl = await getRefinedModelUrl(args).catch(err => {
                                   pdbePlugin.canvas.showToast({
@@ -243,13 +245,14 @@ export function usePdbePlugin(options: MolecularStructureProps) {
                             pdbePlugin,
                             molstarState,
                             refinedNewSelection,
-                            updateLoader
+                            updateLoader,
+                            getRefinedModelUrl
                         )
                     );
                 setSelection(refinedNewSelection);
             });
         },
-        [pdbePlugin, setSelection, updateLoader]
+        [getRefinedModelUrl, pdbePlugin, setSelection, updateLoader]
     );
 
     const updatePluginOnNewSelection = React.useCallback(() => {
@@ -395,7 +398,8 @@ export async function applySelectionChangesToPlugin(
     plugin: PDBeMolstarPlugin,
     molstarState: MolstarStateRef,
     newSelection: Selection,
-    updateLoader: MolecularStructureProps["updateLoader"]
+    updateLoader: MolecularStructureProps["updateLoader"],
+    getRefinedModelUrl: (args: RefinedModelGetArgs) => Promise<string>
 ): Promise<void> {
     if (molstarState.current.type !== "pdb") return;
 
@@ -422,8 +426,9 @@ export async function applySelectionChangesToPlugin(
                 const args = {
                     pdbId: pdbId,
                     emdbId: emdbId,
-                    methodType: item.type,
+                    method: item.type,
                 };
+
                 const filenameUrl = await getRefinedModelUrl(args).catch(err => {
                     plugin.canvas.showToast({
                         title: i18n.t("Error"),
@@ -647,42 +652,6 @@ type MolstarStateRef = React.MutableRefObject<MolstarState>;
 
 function getId<T extends { id: string }>(obj: T): string {
     return obj.id;
-}
-
-enum refinedMethods {
-    pdbRedo = "PDB-Redo",
-    isolde = "Isolde",
-    refmac = "Refmac",
-    phenix = "PHENIX",
-}
-
-//FIX: Data layer interference
-export async function getRefinedModelUrl(args: RefinedModelsArgs): Promise<string> {
-    const { pdbId, emdbId, methodType } = args;
-    const emdbParam = emdbId ? `&emdbId=EMD-${emdbId}` : "";
-    const url = `${REFINED_MODELS_ENDPOINT}?pdbId=${pdbId.toUpperCase()}${emdbParam}&methodType=${
-        refinedMethods[methodType]
-    }`;
-    console.debug("Requesting refined model URL from endpoint: " + url);
-
-    const refinedModels = await getValidatedJSON(url, paginationCodec(refinedModelCodec))
-        .map(getResults)
-        .toPromise();
-
-    const coincidence = refinedModels[0];
-    if (!coincidence) {
-        throw new Error(loaderErrors.refinedModelNotFound(args));
-    }
-
-    if (refinedModels.length > 1) {
-        console.warn(
-            `Multiple refined models found for ${pdbId} with emdbId ${
-                emdbId ?? "NULL"
-            } and methodType ${methodType}. Using the first one.`
-        );
-    }
-
-    return coincidence.filename.replaceAll("https://cci.lbl.gov/static/data/", "/cci/");
 }
 
 export async function checkModelUrl(args: { id: Maybe<string>; url: string }): Promise<Response> {

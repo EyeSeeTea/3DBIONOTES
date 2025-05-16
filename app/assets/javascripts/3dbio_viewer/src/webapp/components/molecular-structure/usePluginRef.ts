@@ -25,8 +25,9 @@ import { LoaderKey, loaderKeys } from "../RootViewerContents";
 import { useAppContext } from "../AppContext";
 import { routes } from "../../../routes";
 import { MolstarState, MolstarStateActions } from "./MolstarState";
-import i18n from "../../utils/i18n";
 import { getCurrentItems, loadEmdb, setEmdbOpacity } from "./molstar";
+import { RefinedModelGetArgs } from "../../../domain/repositories/RefinedModelRepository";
+import i18n from "../../utils/i18n";
 
 type Options = {
     prevSelectionRef: React.MutableRefObject<Selection | undefined>;
@@ -97,6 +98,16 @@ export function usePluginRef(options: Options) {
     /* Using useRef for hot reload inside pluginRef() */
     const sequenceCompletedRef = React.useRef(
         pdbeMolstarSequenceEventCompletedWrapper(setMolstarDefaultChain)
+    );
+
+    const getRefinedModelUrl = React.useCallback(
+        (args: RefinedModelGetArgs): Promise<string> => {
+            return compositionRoot.getRefinedModel
+                .execute(args)
+                .map(refinedModel => refinedModel.filenameUrl)
+                .toPromise();
+        },
+        [compositionRoot]
     );
 
     React.useEffect(() => {
@@ -359,7 +370,8 @@ export function usePluginRef(options: Options) {
                             plugin,
                             molstarState,
                             newSelection,
-                            updateLoader
+                            updateLoader,
+                            getRefinedModelUrl
                         )
                     );
             }
@@ -389,12 +401,13 @@ export function usePluginRef(options: Options) {
             getLigandViewState,
             setPdbePlugin,
             updateLoader,
-            compositionRoot.getRelatedModels,
+            compositionRoot,
             setSelection,
             setPluginLoad,
             uploadDataToken,
             extension,
             molstarState,
+            getRefinedModelUrl,
         ]
     );
 
