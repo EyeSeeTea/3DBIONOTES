@@ -208,7 +208,12 @@ function getValidationQueryLink(args: {
         case "Refmac":
             return pdbId + "-refmac";
         case "PHENIX":
-            return `${pdbId}-${emdbId}-phenix`;
+            if (!emdbId) {
+                console.error("PHENIX validation requires an EMDB ID");
+                return undefined;
+            }
+            // Remove "EMD-" prefix
+            return `${pdbId}-${emdbId.replaceAll("EMD-", "")}-phenix`;
         default:
             console.error(`Validation not supported: "${validationMethod}"`);
             return undefined;
