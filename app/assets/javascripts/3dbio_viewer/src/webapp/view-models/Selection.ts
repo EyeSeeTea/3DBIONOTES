@@ -81,24 +81,10 @@ export interface DbItem<K = Type> {
 }
 
 export function getItemSelector(item: DbItem): Selector {
-    switch (item.type) {
-        case "pdb": // Example: label = "6w9c"
-            return { label: new RegExp(`^${item.id}$`, "i") };
-        case "pdbRedo": // Example: label = "6w9c-pdbRedo"
-            return { label: new RegExp(`^${item.id}$`, "i") };
-        case "isolde": // Example: label = "6w9c-isolde"
-            return { label: new RegExp(`^${item.id}$`, "i") };
-        case "refmac": // Example: label = "6w9c-refmac"
-            return { label: new RegExp(`^${item.id}$`, "i") };
-        case "phenix": // Example: label = "6w9c-8650-phenix"
-            return { label: new RegExp(`^${item.id}$`, "i") };
-        case "emdb":
-            // Example: with provider = "RCSB PDB EMD Density Server: EMD-8650"
-            // Example: with URL "https://maps.rcsb.org/em/EMD-21375/cell?detail=3"
-            return { label: new RegExp(`/${item.id}/`, "i") };
-        default:
-            return {};
-    }
+    // Example: with provider = "RCSB PDB EMD Density Server: EMD-8650"
+    // Example: with URL "https://maps.rcsb.org/em/EMD-21375/cell?detail=3"
+    if (item.type === "emdb") return { label: new RegExp(`/${item.id}/`, "i") };
+    else return { label: new RegExp(`^${item.id}$`, "i") }; // Cell labels are now always the model id
 }
 
 export function getMainItem(selection: Selection, modelType: MainType): Maybe<string> {
