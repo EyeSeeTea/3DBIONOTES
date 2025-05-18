@@ -18,7 +18,7 @@ import {
     loaderErrors,
     setVisibility,
     urls,
-} from "./usePdbPlugin";
+} from "./usePdbPluginHelpers";
 import { debugVariable, isDebugMode } from "../../../utils/debug";
 import { Maybe } from "../../../utils/ts-utils";
 import { LoaderKey, loaderKeys } from "../RootViewerContents";

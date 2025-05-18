@@ -30,7 +30,7 @@ import i18n from "../../../domain/utils/i18n";
 import "./molstar.css";
 import "./molstar-light.css";
 
-const urls: Record<MainType, (id: string) => string> = {
+export const urls: Record<MainType, (id: string) => string> = {
     pdb: (id: string) => `https://www.ebi.ac.uk/pdbe/model-server/v1/${id}/full?encoding=cif`,
     emdb: (id: string) => `https://maps.rcsb.org/em/${id}/cell?detail=3`,
 };
@@ -55,7 +55,7 @@ export const loaderErrors = {
 
 export const errorsKeys = _.mapValues(loaderErrors, (_v, k) => k);
 
-function setVisibility(plugin: PDBeMolstarPlugin, item: DbItem) {
+export function setVisibility(plugin: PDBeMolstarPlugin, item: DbItem) {
     const selector = getItemSelector(item);
     return plugin.visual.setVisibility(selector, item.visible || false);
 }
@@ -97,7 +97,7 @@ export async function highlight(
 
 type LigandView = InitParams["ligandView"];
 
-function getLigandView(selection: BaseSelection): LigandView | undefined {
+export function getLigandView(selection: BaseSelection): LigandView | undefined {
     const { chainId, ligandId } = selection;
     if (!chainId || !ligandId) return;
     const [component, position] = ligandId.split("-");
