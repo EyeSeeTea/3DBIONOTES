@@ -9,11 +9,11 @@ import { MappingChain } from "../../data/repositories/BionotesPdbInfoRepository"
 export interface PdbInfo {
     id: Maybe<string>;
     emdbs: Emdb[];
-    chains: Chain[];
+    chains: PdbChain[];
     ligands: Ligand[];
 }
 
-type Chain = {
+export type PdbChain = {
     id: string;
     name: string;
     shortName: string;
@@ -93,6 +93,6 @@ export function getPdbInfoFromUploadData(uploadData: UploadData): PdbInfo {
 }
 
 // Default chain: the first one with uniprot, or the first one if none has uniprot
-export function getDefaultChain(chains: Chain[]): Maybe<Chain> {
+export function getDefaultChain(chains: PdbChain[]): Maybe<PdbChain> {
     return chains.find(chain => chain.protein) || chains[0];
 }
