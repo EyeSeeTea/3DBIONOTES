@@ -13,3 +13,10 @@ export type RefinedModel = {
 export function typeIsRefinedModelType(type: string): type is RefinedModelType {
     return refinedModelsType.includes(type as RefinedModelType);
 }
+
+export enum refinedMethods {
+    pdbRedo = "PDB-Redo",
+    isolde = "Isolde",
+    refmac = "Refmac",
+    phenix = "PHENIX",
+}

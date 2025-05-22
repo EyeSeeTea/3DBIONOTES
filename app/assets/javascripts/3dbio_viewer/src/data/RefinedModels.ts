@@ -1,14 +1,7 @@
 import { Codec, enumeration, exactly, GetType, string } from "purify-ts";
-import { RefinedModelType } from "../domain/entities/RefinedModel";
+import { refinedMethods, RefinedModelType } from "../domain/entities/RefinedModel";
 import _ from "lodash";
 import { getKeys } from "../utils/ts-utils";
-
-enum refinedMethods {
-    pdbRedo = "PDB-Redo",
-    isolde = "Isolde",
-    refmac = "Refmac",
-    phenix = "PHENIX",
-}
 
 export const refinedModelCodec = Codec.interface({
     source: exactly("CERES", "CSTF", "PDB-REDO"),

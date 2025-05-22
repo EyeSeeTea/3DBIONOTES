@@ -13,7 +13,13 @@ export class ExternalModel {
         return this.compositionRoot.getRefinedModel
             .execute(args)
             .map(refinedModel => refinedModel.filenameUrl)
-            .toPromise();
+            .toPromise()
+            .then(url => {
+                if (!this.refinedModelUrlIsValidUrl(url)) {
+                    return Promise.reject(new Error("Invalid refined model URL"));
+                }
+                return url;
+            });
     };
 
     filterOnlyValidRefinedModels(args: {
@@ -46,6 +52,10 @@ export class ExternalModel {
         return Promise.allSettled(promises).then(results =>
             results.map(result => (result.status === "fulfilled" ? result.value : false))
         );
+    }
+
+    private refinedModelUrlIsValidUrl(url: string): boolean {
+        return /^https?:\/\/[^\s/$.?#].[^\s]*$/i.test(url);
     }
 
     private async validateRefinedModel(args: {
