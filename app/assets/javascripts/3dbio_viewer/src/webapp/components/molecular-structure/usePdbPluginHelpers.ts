@@ -49,8 +49,14 @@ export const loaderErrors = {
     pdbRequest: (url: string, status: number) =>
         i18n.t(`Error loading PDB model: url=${url} - ${status}`),
     request: (url: string, status: number) => i18n.t(`Error loading model: url=${url} - ${status}`),
-    refinedModelUnexpectedError: (args: RefinedModelGetArgs) =>
-        i18n.t(`Unexpected error while loading refined model: ${refinedModelArgsToString(args)}`),
+    refinedModelUnableToFindModelUrl: (args: RefinedModelGetArgs) =>
+        i18n.t("Unable to find refined model URL: {{args}}", {
+            args: refinedModelArgsToString(args),
+        }),
+    refinedModelUnableToFetch: (args: RefinedModelGetArgs) =>
+        i18n.t("Unable to fetch refined model URL: {{args}}", {
+            args: refinedModelArgsToString(args),
+        }),
 };
 
 export const errorsKeys = _.mapValues(loaderErrors, (_v, k) => k);
@@ -60,13 +66,14 @@ export function setVisibility(plugin: PDBeMolstarPlugin, item: DbItem) {
     return plugin.visual.setVisibility(selector, item.visible || false);
 }
 
-export async function highlight(
-    plugin: PDBeMolstarPlugin,
-    chains: Maybe<PdbInfo["chains"]>,
-    selection: BaseSelection,
-    molstarState: MolstarStateRef,
-    focus = true
-): Promise<void> {
+export async function highlight(args: {
+    plugin: PDBeMolstarPlugin;
+    chains: Maybe<PdbInfo["chains"]>;
+    selection: BaseSelection;
+    molstarState: MolstarStateRef;
+    focus: Maybe<boolean>;
+}): Promise<void> {
+    const { plugin, chains, selection, molstarState, focus = true } = args;
     plugin.visual.clearSelection().catch(_err => {});
     plugin.visual.clearHighlight().catch(_err => {}); //remove previous highlight
     const ligandsView = getLigandView(selection);
@@ -110,7 +117,7 @@ export function getLigandView(selection: BaseSelection): LigandView | undefined 
     };
 }
 
-type MolstarStateRef = React.MutableRefObject<MolstarState>;
+export type MolstarStateRef = React.MutableRefObject<MolstarState>;
 
 export async function applySelectionChangesToPlugin(
     plugin: PDBeMolstarPlugin,
@@ -149,8 +156,8 @@ export async function applySelectionChangesToPlugin(
                 const filenameUrl = await getRefinedModelUrl(args).catch(err => {
                     plugin.canvas.showToast({
                         title: i18n.t("Error"),
-                        message: loaderErrors.refinedModelUnexpectedError(args),
-                        key: errorsKeys.refinedModelUnexpectedError,
+                        message: loaderErrors.refinedModelUnableToFindModelUrl(args),
+                        key: errorsKeys.refinedModelUnableToFindModelUrl,
                     });
                     return Promise.reject(err);
                 });
