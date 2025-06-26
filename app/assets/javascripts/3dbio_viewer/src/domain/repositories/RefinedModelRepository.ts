@@ -1,6 +1,6 @@
 import { Maybe } from "../../utils/ts-utils";
 import { FutureData } from "../entities/FutureData";
-import { RefinedModel, RefinedModelType } from "../entities/RefinedModel";
+import { refinedMethods, RefinedModel, RefinedModelType } from "../entities/RefinedModel";
 
 export interface RefinedModelRepository {
     getBy(args: RefinedModelGetArgs): FutureData<RefinedModel>;
@@ -13,4 +13,6 @@ export interface RefinedModelGetArgs {
 }
 
 export const refinedModelArgsToString = (args: RefinedModelGetArgs) =>
-    `${[args.pdbId, args.emdbId, args.method].filter(Boolean).join(", ")}`;
+    `${[refinedMethods[args.method], args.pdbId, args.emdbId ? `EMD-${args.emdbId}` : undefined]
+        .filter(Boolean)
+        .join(", ")}`;

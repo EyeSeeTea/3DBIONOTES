@@ -1,5 +1,5 @@
 import { FutureData } from "../../domain/entities/FutureData";
-import { RefinedModel } from "../../domain/entities/RefinedModel";
+import { refinedMethods, RefinedModel } from "../../domain/entities/RefinedModel";
 import {
     refinedModelArgsToString,
     RefinedModelGetArgs,
@@ -48,7 +48,7 @@ export class RefinedModelApiRepository implements RefinedModelRepository {
                         source: coincidence.source,
                         method: mapRefinedModelMethod(coincidence.method),
                         externalLink: coincidence.externalLink,
-                        filenameUrl: coincidence.filename.replaceAll(
+                        filenameUrl: coincidence.filename?.replaceAll(
                             "https://cci.lbl.gov/static/data/",
                             "/cci/"
                         ),
@@ -58,11 +58,4 @@ export class RefinedModelApiRepository implements RefinedModelRepository {
 
         return refinedModels$;
     }
-}
-
-enum refinedMethods {
-    pdbRedo = "PDB-Redo",
-    isolde = "Isolde",
-    refmac = "Refmac",
-    phenix = "PHENIX",
 }

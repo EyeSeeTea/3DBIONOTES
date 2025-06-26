@@ -16,6 +16,7 @@ import {
     getErrorByStatus,
     getLigandView,
     loaderErrors,
+    loadRefinedItems,
     setVisibility,
     urls,
 } from "./usePdbPluginHelpers";
@@ -28,6 +29,8 @@ import { MolstarState, MolstarStateActions } from "./MolstarState";
 import { getCurrentItems, loadEmdb, setEmdbOpacity } from "./molstar";
 import { RefinedModelGetArgs } from "../../../domain/repositories/RefinedModelRepository";
 import i18n from "../../utils/i18n";
+import { PluginFeedback } from "./PluginFeedback";
+import { ExternalModel } from "./ExternalModel";
 
 type Options = {
     prevSelectionRef: React.MutableRefObject<Selection | undefined>;
@@ -100,14 +103,13 @@ export function usePluginRef(options: Options) {
         pdbeMolstarSequenceEventCompletedWrapper(setMolstarDefaultChain)
     );
 
+    const externalModel = React.useMemo(() => new ExternalModel(compositionRoot), [
+        compositionRoot,
+    ]);
+
     const getRefinedModelUrl = React.useCallback(
-        (args: RefinedModelGetArgs): Promise<string> => {
-            return compositionRoot.getRefinedModel
-                .execute(args)
-                .map(refinedModel => refinedModel.filenameUrl)
-                .toPromise();
-        },
-        [compositionRoot]
+        (args: RefinedModelGetArgs) => externalModel.getRefinedModelUrl(args),
+        [externalModel]
     );
 
     React.useEffect(() => {
@@ -332,6 +334,7 @@ export function usePluginRef(options: Options) {
                     .catch(err => loadVoidMolstar(err));
             }
 
+            // FIXME: Mid-refactor. Not extracting as all SequenceView logic should be extracted along it in that case.
             async function initializePdbeMolstar(element: HTMLDivElement) {
                 subscribeSequenceComplete();
                 subscribeLoadComplete();
@@ -340,6 +343,48 @@ export function usePluginRef(options: Options) {
                 else if (pdbId) await loadFromPdb(pdbId, element);
                 else if (newSelection.type === "uploadData") await loadFromUploadData(element);
                 else loadVoidMolstar(loaderErrors.undefinedPdb);
+                loadRefinedModels();
+                // TODO: Also for overlay items should be...
+            }
+
+            //FIXME: To be deleted completely
+            // Async
+            function loadRefinedModels() {
+                if (newSelection.type !== "free") return;
+                const pluginFeedbackActions = new PluginFeedback(plugin, i18n).getActions();
+                const externalModel = new ExternalModel(compositionRoot);
+
+                const onUrlRetrievalFailure = (args: RefinedModelGetArgs) => {
+                    pluginFeedbackActions.error.whileRetrievingRefinedModelUrl(args);
+                };
+
+                const onFetchFailure = (args: RefinedModelGetArgs) => {
+                    pluginFeedbackActions.error.whileFetchingRefinedModelUrl(args);
+                };
+
+                externalModel
+                    .filterOnlyValidRefinedModels({
+                        refinedModels: newSelection.refinedModels,
+                        onUrlRetrievalFailure: onUrlRetrievalFailure,
+                        onFetchFailure: onFetchFailure,
+                    })
+                    .then(validModels => {
+                        if (validModels.length === newSelection.refinedModels.length) {
+                            console.debug("All refined models are valid");
+                            loadRefinedItems({
+                                plugin,
+                                updateLoader,
+                                getRefinedModelUrl,
+                                molstarState,
+                            })(validModels);
+                        } else {
+                            // Loading refinedModels through useEffect detecting changes in selection
+                            setSelection({
+                                ...newSelection,
+                                refinedModels: validModels,
+                            });
+                        }
+                    });
             }
 
             function loadEmdbIfNotPresent(): Promise<void> {

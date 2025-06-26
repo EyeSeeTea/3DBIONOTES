@@ -213,6 +213,7 @@ export function setMainItem(
     };
 }
 
+// Used only when user manually removes. Not any other.
 export function removeOverlayItem(selection: Selection, id: string): Selection {
     if (selection.type !== "free") return selection;
     const overlay = selection.overlay.flatMap(item => (item.id === id ? [] : [item]));

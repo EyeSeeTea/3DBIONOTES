@@ -49,8 +49,14 @@ export const loaderErrors = {
     pdbRequest: (url: string, status: number) =>
         i18n.t(`Error loading PDB model: url=${url} - ${status}`),
     request: (url: string, status: number) => i18n.t(`Error loading model: url=${url} - ${status}`),
-    refinedModelUnexpectedError: (args: RefinedModelGetArgs) =>
-        i18n.t(`Unexpected error while loading refined model: ${refinedModelArgsToString(args)}`),
+    refinedModelUnableToFindModelUrl: (args: RefinedModelGetArgs) =>
+        i18n.t("Unable to find refined model URL: {{args}}", {
+            args: refinedModelArgsToString(args),
+        }),
+    refinedModelUnableToFetch: (args: RefinedModelGetArgs) =>
+        i18n.t("Unable to fetch refined model URL: {{args}}", {
+            args: refinedModelArgsToString(args),
+        }),
 };
 
 export const errorsKeys = _.mapValues(loaderErrors, (_v, k) => k);
@@ -60,13 +66,14 @@ export function setVisibility(plugin: PDBeMolstarPlugin, item: DbItem) {
     return plugin.visual.setVisibility(selector, item.visible || false);
 }
 
-export async function highlight(
-    plugin: PDBeMolstarPlugin,
-    chains: Maybe<PdbInfo["chains"]>,
-    selection: BaseSelection,
-    molstarState: MolstarStateRef,
-    focus = true
-): Promise<void> {
+export async function highlight(args: {
+    plugin: PDBeMolstarPlugin;
+    chains: Maybe<PdbInfo["chains"]>;
+    selection: BaseSelection;
+    molstarState: MolstarStateRef;
+    focus: Maybe<boolean>;
+}): Promise<void> {
+    const { plugin, chains, selection, molstarState, focus = true } = args;
     plugin.visual.clearSelection().catch(_err => {});
     plugin.visual.clearHighlight().catch(_err => {}); //remove previous highlight
     const ligandsView = getLigandView(selection);
@@ -110,7 +117,75 @@ export function getLigandView(selection: BaseSelection): LigandView | undefined 
     };
 }
 
-type MolstarStateRef = React.MutableRefObject<MolstarState>;
+export type MolstarStateRef = React.MutableRefObject<MolstarState>;
+
+const getTitle = (idx: number, items: DbItem[], modelType: Type) => {
+    return items.length > 1
+        ? i18n.t(`Loading ${modelType.toUpperCase()} (${idx + 1}/${items.length})...`)
+        : i18n.t(`Loading ${modelType.toUpperCase()}...`);
+};
+
+export const loadRefinedItems = (args: {
+    plugin: PDBeMolstarPlugin;
+    updateLoader: MolecularStructureProps["updateLoader"];
+    getRefinedModelUrl: (args: RefinedModelGetArgs) => Promise<string>;
+    molstarState: MolstarStateRef;
+}) => async (items: DbItem<RefinedModelType>[]) => {
+    const { plugin, updateLoader, getRefinedModelUrl, molstarState } = args;
+    for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item) {
+            const { pdbId, emdbId } = getRefinedModelIds(item);
+            const args = {
+                pdbId: pdbId,
+                emdbId: emdbId,
+                method: item.type,
+            };
+
+            const filenameUrl = await getRefinedModelUrl(args).catch(err => {
+                plugin.canvas.showToast({
+                    title: i18n.t("Error"),
+                    message: loaderErrors.refinedModelUnableToFindModelUrl(args),
+                    key: errorsKeys.refinedModelUnableToFindModelUrl,
+                });
+                return Promise.reject(err);
+            });
+            await checkModelUrl({ id: item.id, url: filenameUrl }).then(async res => {
+                if (res.loaded) {
+                    const loadParams: LoadParams = {
+                        url: filenameUrl,
+                        label: item.id,
+                        format: filenameUrl.endsWith(".pdb") ? "pdb" : "mmcif",
+                        isBinary: false,
+                        assemblyId: "1",
+                    };
+                    await updateLoader(
+                        "loadModel",
+                        plugin.load(loadParams, false),
+                        getTitle(i, items, item.type)
+                    );
+                    setVisibility(plugin, item);
+                    updateItems(molstarState, item);
+                } else
+                    plugin.canvas.showToast({
+                        title: i18n.t("Error"),
+                        message: getErrorByStatus(item.id, res.status),
+                        key: errorKeyByStatus(res.status),
+                    });
+            });
+        }
+    }
+};
+
+export const oldItems = (molstarState: MolstarStateRef) =>
+    molstarState.current.type === "pdb" ? molstarState.current.items : [];
+
+export const updateItems = (molstarState: MolstarStateRef, item: DbItem) => {
+    molstarState.current = MolstarStateActions.updateItems(
+        molstarState.current,
+        _.unionBy(oldItems(molstarState), [item], getId)
+    );
+};
 
 export async function applySelectionChangesToPlugin(
     plugin: PDBeMolstarPlugin,
@@ -121,69 +196,9 @@ export async function applySelectionChangesToPlugin(
 ): Promise<void> {
     if (molstarState.current.type !== "pdb") return;
 
-    const oldItems = () => (molstarState.current.type === "pdb" ? molstarState.current.items : []);
-    const updateItems = (item: DbItem) => {
-        molstarState.current = MolstarStateActions.updateItems(
-            molstarState.current,
-            _.unionBy(oldItems(), [item], getId)
-        );
-    };
-
-    const getTitle = (idx: number, items: DbItem[], modelType: Type) => {
-        return items.length > 1
-            ? i18n.t(`Loading ${modelType.toUpperCase()} (${idx + 1}/${items.length})...`)
-            : i18n.t(`Loading ${modelType.toUpperCase()}...`);
-    };
-
-    const loadRefinedItems = async (items: DbItem<RefinedModelType>[]) => {
-        for (let i = 0; i < items.length; i++) {
-            const item = items[i];
-            if (item) {
-                const { pdbId, emdbId } = getRefinedModelIds(item);
-                const args = {
-                    pdbId: pdbId,
-                    emdbId: emdbId,
-                    method: item.type,
-                };
-
-                const filenameUrl = await getRefinedModelUrl(args).catch(err => {
-                    plugin.canvas.showToast({
-                        title: i18n.t("Error"),
-                        message: loaderErrors.refinedModelUnexpectedError(args),
-                        key: errorsKeys.refinedModelUnexpectedError,
-                    });
-                    return Promise.reject(err);
-                });
-                await checkModelUrl({ id: item.id, url: filenameUrl }).then(async res => {
-                    if (res.loaded) {
-                        const loadParams: LoadParams = {
-                            url: filenameUrl,
-                            label: item.id,
-                            format: filenameUrl.endsWith(".pdb") ? "pdb" : "mmcif",
-                            isBinary: false,
-                            assemblyId: "1",
-                        };
-                        await updateLoader(
-                            "loadModel",
-                            plugin.load(loadParams, false),
-                            getTitle(i, items, item.type)
-                        );
-                        setVisibility(plugin, item);
-                        updateItems(item);
-                    } else
-                        plugin.canvas.showToast({
-                            title: i18n.t("Error"),
-                            message: getErrorByStatus(item.id, res.status),
-                            key: errorKeyByStatus(res.status),
-                        });
-                });
-            }
-        }
-    };
-
     const newItems = getItems(newSelection);
 
-    const { added, removed, updated } = diffDbItems(newItems, oldItems());
+    const { added, removed, updated } = diffDbItems(newItems, oldItems(molstarState));
 
     const pdbs = added.filter(item => item.type === "pdb");
     const emdbs = added.filter(item => item.type === "emdb");
@@ -202,7 +217,7 @@ export async function applySelectionChangesToPlugin(
 
     console.debug(
         "Update molstar:",
-        _({ oldItems: oldItems(), added, removed, updated })
+        _({ oldItems: oldItems(molstarState), added, removed, updated })
             .mapValues(objs => objs.map(obj => obj.id).join(", "))
             .pickBy()
             .value()
@@ -216,7 +231,7 @@ export async function applySelectionChangesToPlugin(
         plugin.visual.remove(getItemSelector(item));
         molstarState.current = MolstarStateActions.updateItems(
             molstarState.current,
-            _.differenceBy(oldItems(), [item], getId)
+            _.differenceBy(oldItems(molstarState), [item], getId)
         );
     }
 
@@ -224,7 +239,7 @@ export async function applySelectionChangesToPlugin(
         setVisibility(plugin, item);
         molstarState.current = MolstarStateActions.updateItems(
             molstarState.current,
-            oldItems().map(item_ => (item_.id === item.id ? item : item_))
+            oldItems(molstarState).map(item_ => (item_.id === item.id ? item : item_))
         );
     }
 
@@ -250,7 +265,7 @@ export async function applySelectionChangesToPlugin(
                             : i18n.t("Loading PDB...")
                     );
                     setVisibility(plugin, item);
-                    updateItems(item);
+                    updateItems(molstarState, item);
                 } else if (getMainItem(newSelection, "pdb") === pdbId)
                     updateLoader("loadModel", Promise.reject(getErrorByStatus(pdbId, res.status)));
                 if (!res.loaded)
@@ -282,7 +297,7 @@ export async function applySelectionChangesToPlugin(
                     );
                     setEmdbOpacity({ plugin, id: item.id, value: 0.5 });
                     setVisibility(plugin, item);
-                    updateItems(item);
+                    updateItems(molstarState, item);
                 } else
                     plugin.canvas.showToast({
                         title: i18n.t("Error"),
@@ -293,8 +308,16 @@ export async function applySelectionChangesToPlugin(
         }
     }
 
-    ([pdbRedo, isolde, refmac, phenix] as DbItem<RefinedModelType>[][]).forEach(items =>
-        loadRefinedItems(items)
+    await Promise.all(
+        ([pdbRedo, isolde, refmac, phenix] as DbItem<RefinedModelType>[][]).map(
+            async items =>
+                await loadRefinedItems({
+                    plugin,
+                    updateLoader,
+                    getRefinedModelUrl,
+                    molstarState,
+                })(items)
+        )
     );
 
     // Remove unused elements
@@ -306,7 +329,7 @@ export async function applySelectionChangesToPlugin(
         plugin.visual.remove(getItemSelector(item));
         molstarState.current = MolstarStateActions.updateItems(
             molstarState.current,
-            _.differenceBy(oldItems(), [item], getId)
+            _.differenceBy(oldItems(molstarState), [item], getId)
         );
     }
 
