@@ -1,10 +1,11 @@
+import { Maybe } from "../../utils/ts-utils";
 import { SourceName } from "./Source";
 
 export const refinedModelsType = ["pdbRedo", "isolde", "refmac", "phenix"] as const;
 export type RefinedModelType = typeof refinedModelsType[number];
 
 export type RefinedModel = {
-    filenameUrl: string;
+    filenameUrl: Maybe<string>; // Some model files might not be available per failed jobs
     method: RefinedModelType;
     source: SourceName;
     externalLink: string;

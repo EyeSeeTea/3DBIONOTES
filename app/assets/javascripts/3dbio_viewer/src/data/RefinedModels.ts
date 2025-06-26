@@ -1,4 +1,4 @@
-import { Codec, enumeration, exactly, GetType, string } from "purify-ts";
+import { Codec, enumeration, exactly, GetType, nullable, string } from "purify-ts";
 import { refinedMethods, RefinedModelType } from "../domain/entities/RefinedModel";
 import _ from "lodash";
 import { getKeys } from "../utils/ts-utils";
@@ -6,7 +6,7 @@ import { getKeys } from "../utils/ts-utils";
 export const refinedModelCodec = Codec.interface({
     source: exactly("CERES", "CSTF", "PDB-REDO"),
     method: enumeration(refinedMethods),
-    filename: string,
+    filename: nullable(string),
     externalLink: string,
     details: string, // ""
 });

@@ -4,25 +4,26 @@ import { RefinedModelType } from "../../../domain/entities/RefinedModel";
 import { RefinedModelGetArgs } from "../../../domain/repositories/RefinedModelRepository";
 import { DbItem, getRefinedModelIds } from "../../view-models/Selection";
 import { checkModelUrl } from "./usePdbPluginHelpers";
+import { isDev } from "../../../routes";
 
 export class ExternalModel {
     constructor(private compositionRoot: CompositionRoot) {}
 
     // Arrow function -> Safe use of "this" if the method is used as a callback
-    getRefinedModelUrl = (args: RefinedModelGetArgs): Promise<string> => {
+    getRefinedModelUrl = async (args: RefinedModelGetArgs): Promise<string> => {
         return this.compositionRoot.getRefinedModel
             .execute(args)
             .map(refinedModel => refinedModel.filenameUrl)
             .toPromise()
             .then(url => {
-                if (!this.refinedModelUrlIsValidUrl(url)) {
+                if (!url) return Promise.reject(new Error("Refined model URL is not available"));
+                else if (!this.refinedModelUrlIsValidUrl(url))
                     return Promise.reject(new Error("Invalid refined model URL"));
-                }
-                return url;
+                else return url;
             });
     };
 
-    filterOnlyValidRefinedModels(args: {
+    async filterOnlyValidRefinedModels(args: {
         refinedModels: DbItem<RefinedModelType>[];
         onUrlRetrievalFailure: (args: RefinedModelGetArgs) => void;
         onFetchFailure: (args: RefinedModelGetArgs) => void;
@@ -35,7 +36,7 @@ export class ExternalModel {
         }).then(results => _.compact(results));
     }
 
-    private validateRefinedModels(args: {
+    private async validateRefinedModels(args: {
         refinedModels: DbItem<RefinedModelType>[];
         onUrlRetrievalFailure: (args: RefinedModelGetArgs) => void;
         onFetchFailure: (args: RefinedModelGetArgs) => void;
@@ -55,6 +56,8 @@ export class ExternalModel {
     }
 
     private refinedModelUrlIsValidUrl(url: string): boolean {
+        const cciProxiedUrl = /^\/cci\/[^\s]*$/i.test(url);
+        if (isDev && cciProxiedUrl) return true; // In dev mode, allow CCI proxied URLs
         return /^https?:\/\/[^\s/$.?#].[^\s]*$/i.test(url);
     }
 

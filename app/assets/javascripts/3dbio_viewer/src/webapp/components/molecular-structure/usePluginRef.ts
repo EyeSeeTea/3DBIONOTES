@@ -103,14 +103,13 @@ export function usePluginRef(options: Options) {
         pdbeMolstarSequenceEventCompletedWrapper(setMolstarDefaultChain)
     );
 
+    const externalModel = React.useMemo(() => new ExternalModel(compositionRoot), [
+        compositionRoot,
+    ]);
+
     const getRefinedModelUrl = React.useCallback(
-        (args: RefinedModelGetArgs): Promise<string> => {
-            return compositionRoot.getRefinedModel
-                .execute(args)
-                .map(refinedModel => refinedModel.filenameUrl)
-                .toPromise();
-        },
-        [compositionRoot]
+        (args: RefinedModelGetArgs) => externalModel.getRefinedModelUrl(args),
+        [externalModel]
     );
 
     React.useEffect(() => {

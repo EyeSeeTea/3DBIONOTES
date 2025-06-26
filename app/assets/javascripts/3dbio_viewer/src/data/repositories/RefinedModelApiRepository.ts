@@ -48,7 +48,7 @@ export class RefinedModelApiRepository implements RefinedModelRepository {
                         source: coincidence.source,
                         method: mapRefinedModelMethod(coincidence.method),
                         externalLink: coincidence.externalLink,
-                        filenameUrl: coincidence.filename.replaceAll(
+                        filenameUrl: coincidence.filename?.replaceAll(
                             "https://cci.lbl.gov/static/data/",
                             "/cci/"
                         ),
