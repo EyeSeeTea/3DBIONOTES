@@ -8,6 +8,11 @@ export function hashUrl(url: string): string {
 }
 
 export function getStorageCache<Data>(key: string): Maybe<Data> {
+    if (localStorage.getItem("disableCache") === "true") {
+        console.debug("Cache is disabled, returning undefined for key:", key);
+        return undefined;
+    }
+
     const cached = localStorage.getItem(key);
     if (!cached) return undefined;
 
@@ -32,6 +37,11 @@ export function getStorageCache<Data>(key: string): Maybe<Data> {
 }
 
 export function setStorageCache<Data>(key: string, value: Data): void {
+    if (localStorage.getItem("disableCache") === "true") {
+        console.debug("Cache is disabled, not setting value for key:", key);
+        return undefined;
+    }
+
     const cacheEntry = {
         value,
         timestamp: Date.now(),
