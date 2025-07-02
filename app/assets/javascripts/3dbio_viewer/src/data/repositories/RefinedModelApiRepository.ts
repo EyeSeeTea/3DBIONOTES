@@ -18,7 +18,7 @@ export class RefinedModelApiRepository implements RefinedModelRepository {
     getBy(args: RefinedModelGetArgs): FutureData<RefinedModel> {
         const { pdbId, emdbId, method } = args;
         const emdbParam = emdbId ? `&emdbId=EMD-${emdbId}` : "";
-        const url = `${REFINED_MODELS_ENDPOINT}?pdbId=${pdbId.toUpperCase()}${emdbParam}&methodType=${
+        const url = `${REFINED_MODELS_ENDPOINT}?pdbId=${pdbId.toUpperCase()}${emdbParam}&method=${
             refinedMethods[method]
         }`;
 
