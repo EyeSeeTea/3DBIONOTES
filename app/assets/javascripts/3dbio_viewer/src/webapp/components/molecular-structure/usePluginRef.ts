@@ -11,22 +11,26 @@ import {
 } from "../../view-models/Selection";
 import {
     applySelectionChangesToPlugin,
-    checkModelUrl,
+    checkMainModelUrl,
     checkUploadedModelUrl,
     getErrorByStatus,
     getLigandView,
     loaderErrors,
+    loadRefinedItems,
     setVisibility,
     urls,
-} from "./usePdbPlugin";
+} from "./usePdbPluginHelpers";
 import { debugVariable, isDebugMode } from "../../../utils/debug";
 import { Maybe } from "../../../utils/ts-utils";
 import { LoaderKey, loaderKeys } from "../RootViewerContents";
 import { useAppContext } from "../AppContext";
 import { routes } from "../../../routes";
 import { MolstarState, MolstarStateActions } from "./MolstarState";
-import i18n from "../../utils/i18n";
 import { getCurrentItems, loadEmdb, setEmdbOpacity } from "./molstar";
+import { RefinedModelGetArgs } from "../../../domain/repositories/RefinedModelRepository";
+import i18n from "../../utils/i18n";
+import { PluginFeedback } from "./PluginFeedback";
+import { ExternalModel } from "./ExternalModel";
 
 type Options = {
     prevSelectionRef: React.MutableRefObject<Selection | undefined>;
@@ -97,6 +101,15 @@ export function usePluginRef(options: Options) {
     /* Using useRef for hot reload inside pluginRef() */
     const sequenceCompletedRef = React.useRef(
         pdbeMolstarSequenceEventCompletedWrapper(setMolstarDefaultChain)
+    );
+
+    const externalModel = React.useMemo(() => new ExternalModel(compositionRoot), [
+        compositionRoot,
+    ]);
+
+    const getRefinedModelUrl = React.useCallback(
+        (args: RefinedModelGetArgs) => externalModel.getRefinedModelUrl(args),
+        [externalModel]
     );
 
     React.useEffect(() => {
@@ -257,7 +270,7 @@ export function usePluginRef(options: Options) {
             }
 
             async function loadFromPdb(pdbId: string, element: HTMLDivElement) {
-                await checkModelUrl(pdbId, "pdb")
+                await checkMainModelUrl(pdbId, "pdb")
                     .then(res => {
                         if (res.loaded) {
                             plugin.render(element, initParams);
@@ -283,7 +296,7 @@ export function usePluginRef(options: Options) {
             }
 
             async function loadEmdbModel(emdbId: string, plugin: PDBeMolstarPlugin): Promise<void> {
-                await checkModelUrl(emdbId, "emdb").then(async res => {
+                await checkMainModelUrl(emdbId, "emdb").then(async res => {
                     if (res.loaded) {
                         await updateLoader(
                             "loadModel",
@@ -305,7 +318,7 @@ export function usePluginRef(options: Options) {
                 emdbId: string,
                 element: HTMLDivElement
             ) {
-                await checkModelUrl(pdbId, "pdb")
+                await checkMainModelUrl(pdbId, "pdb")
                     .then(res => {
                         if (res.loaded) {
                             return plugin
@@ -321,6 +334,7 @@ export function usePluginRef(options: Options) {
                     .catch(err => loadVoidMolstar(err));
             }
 
+            // FIXME: Mid-refactor. Not extracting as all SequenceView logic should be extracted along it in that case.
             async function initializePdbeMolstar(element: HTMLDivElement) {
                 subscribeSequenceComplete();
                 subscribeLoadComplete();
@@ -329,6 +343,48 @@ export function usePluginRef(options: Options) {
                 else if (pdbId) await loadFromPdb(pdbId, element);
                 else if (newSelection.type === "uploadData") await loadFromUploadData(element);
                 else loadVoidMolstar(loaderErrors.undefinedPdb);
+                loadRefinedModels();
+                // TODO: Also for overlay items should be...
+            }
+
+            //FIXME: To be deleted completely
+            // Async
+            function loadRefinedModels() {
+                if (newSelection.type !== "free") return;
+                const pluginFeedbackActions = new PluginFeedback(plugin, i18n).getActions();
+                const externalModel = new ExternalModel(compositionRoot);
+
+                const onUrlRetrievalFailure = (args: RefinedModelGetArgs) => {
+                    pluginFeedbackActions.error.whileRetrievingRefinedModelUrl(args);
+                };
+
+                const onFetchFailure = (args: RefinedModelGetArgs) => {
+                    pluginFeedbackActions.error.whileFetchingRefinedModelUrl(args);
+                };
+
+                externalModel
+                    .filterOnlyValidRefinedModels({
+                        refinedModels: newSelection.refinedModels,
+                        onUrlRetrievalFailure: onUrlRetrievalFailure,
+                        onFetchFailure: onFetchFailure,
+                    })
+                    .then(validModels => {
+                        if (validModels.length === newSelection.refinedModels.length) {
+                            console.debug("All refined models are valid");
+                            loadRefinedItems({
+                                plugin,
+                                updateLoader,
+                                getRefinedModelUrl,
+                                molstarState,
+                            })(validModels);
+                        } else {
+                            // Loading refinedModels through useEffect detecting changes in selection
+                            setSelection({
+                                ...newSelection,
+                                refinedModels: validModels,
+                            });
+                        }
+                    });
             }
 
             function loadEmdbIfNotPresent(): Promise<void> {
@@ -359,7 +415,8 @@ export function usePluginRef(options: Options) {
                             plugin,
                             molstarState,
                             newSelection,
-                            updateLoader
+                            updateLoader,
+                            getRefinedModelUrl
                         )
                     );
             }
@@ -389,12 +446,13 @@ export function usePluginRef(options: Options) {
             getLigandViewState,
             setPdbePlugin,
             updateLoader,
-            compositionRoot.getRelatedModels,
+            compositionRoot,
             setSelection,
             setPluginLoad,
             uploadDataToken,
             extension,
             molstarState,
+            getRefinedModelUrl,
         ]
     );
 

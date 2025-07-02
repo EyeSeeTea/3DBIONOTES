@@ -6,4 +6,8 @@ const i18nWrapper = {
     },
 };
 
+export type I18N = {
+    t: (s: string, namespace?: object) => string;
+};
+
 export default i18nWrapper;

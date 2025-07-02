@@ -13,7 +13,7 @@ export type Source = Reference & {
     methods: Method[];
 };
 
-type SourceName = "CERES" | "CSTF" | "PDB-REDO" | "IDR" | "NMR";
+export type SourceName = "CERES" | "CSTF" | "PDB-REDO" | "IDR" | "NMR";
 
 export function getSource(sources: Source[], source: SourceName): Maybe<Source> {
     return sources.find(s => s.name === source);

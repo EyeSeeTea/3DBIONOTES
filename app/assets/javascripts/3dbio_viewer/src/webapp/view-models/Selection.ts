@@ -4,10 +4,15 @@ import { Ligand } from "../../domain/entities/Ligand";
 import { PdbInfo } from "../../domain/entities/PdbInfo";
 import { Maybe } from "../../utils/ts-utils";
 import { UploadedParams } from "../components/viewer-selector/viewer-selector.hooks";
+import {
+    refinedModelsType,
+    RefinedModelType,
+    typeIsRefinedModelType,
+} from "../../domain/entities/RefinedModel";
 
 /* Selection object from/to string.
 
-Example: 6w9c:A:NAG-701+EMD-8650|6lzg+!EMD-23150+EMD-15311|6w9c-pdbRedo+6w9c-cstf
+Example: 6w9c:A:NAG-701+EMD-8650|6lzg+!EMD-23150+EMD-15311|6w9c-pdbRedo+6w9c-isolde
 
 Main: PDB = 6w9c (chain A, ligand NAG-701) , EMDB = EMD-8650
 Overlay: 6lzg, EMD-23150 (! -> invisible), EMD-15311.
@@ -18,7 +23,6 @@ const mainSeparator = "+";
 const overlaySeparator = "|";
 const chainSeparator = ":";
 
-export type RefinedModelType = "pdbRedo" | "cstf";
 export type MainType = "pdb" | "emdb";
 
 export type Type = MainType | RefinedModelType;
@@ -77,20 +81,10 @@ export interface DbItem<K = Type> {
 }
 
 export function getItemSelector(item: DbItem): Selector {
-    switch (item.type) {
-        case "pdb": // Example: label = "6w9c"
-            return { label: new RegExp(`^${item.id}$`, "i") };
-        case "pdbRedo": // Example: label = "6w9c-pdbRedo"
-            return { label: new RegExp(`^${item.id}$`, "i") };
-        case "cstf": // Example: label = "6w9c-cstf"
-            return { label: new RegExp(`^${item.id}$`, "i") };
-        case "emdb":
-            // Example: with provider = "RCSB PDB EMD Density Server: EMD-8650"
-            // Example: with URL "https://maps.rcsb.org/em/EMD-21375/cell?detail=3"
-            return { label: new RegExp(`/${item.id}/`, "i") };
-        default:
-            return {};
-    }
+    // Example: with provider = "RCSB PDB EMD Density Server: EMD-8650"
+    // Example: with URL "https://maps.rcsb.org/em/EMD-21375/cell?detail=3"
+    if (item.type === "emdb") return { label: new RegExp(`/${item.id}/`, "i") };
+    else return { label: new RegExp(`^${item.id}$`, "i") }; // Cell labels are now always the model id
 }
 
 export function getMainItem(selection: Selection, modelType: MainType): Maybe<string> {
@@ -113,34 +107,50 @@ function splitPdbIdb(main: string): Array<Maybe<string>> {
     }
 }
 
+function getRefinedModelFromLabel(
+    label: string[]
+): { pdbId: Maybe<string>; emdbId: Maybe<string>; type: Maybe<string> } {
+    const [pdbId, emdbIdOrType, typeOrUndefined] = label;
+    const hasEmdb = label.length === 3;
+    const type = hasEmdb ? typeOrUndefined : emdbIdOrType;
+    const emdbId = hasEmdb ? emdbIdOrType : undefined;
+    return {
+        pdbId: pdbId,
+        emdbId: emdbId,
+        type: type,
+    };
+}
+
 function buildRefinedModels(items: string[]): DbItem<RefinedModelType>[] {
     return items
         .map(m => m.split("-"))
-        .flatMap(([id, type]) => {
-            if (
-                id &&
-                id.match(/^!{0,1}\d[\d\w]{3}$/) && //pdb regex
-                (type === "pdbRedo" || type === "cstf")
-            )
-                return [
-                    {
-                        id: `${id.replaceAll("!", "").toLowerCase()}-${type}`, //6zow-pdbRedo
-                        type,
-                        visible: id[0] !== "!",
-                    },
-                ];
-            else return [];
+        .flatMap(label => {
+            const { pdbId, emdbId, type } = getRefinedModelFromLabel(label);
+            if (!pdbId || !type) return [];
+            if (!pdbId.match(/^!{0,1}\d[\d\w]{3}$/)) return []; //invalid pdb id
+            if (!typeIsRefinedModelType(type)) return []; //invalid refined method type
+            if (emdbId && !/^\d{3,5}$/i.test(emdbId)) return []; //in case emdb && invalid emdb id
+
+            return [
+                {
+                    id: [pdbId.replaceAll("!", "").toLowerCase(), emdbId, type]
+                        .filter(Boolean)
+                        .join("-"), //6zow-8650-phenix
+                    type: type,
+                    visible: pdbId[0] !== "!",
+                },
+            ];
         });
 }
 
 export function getSelectionFromString(items: Maybe<string>): Selection {
     const [main = "", overlay = ""] = (items || "").split(overlaySeparator, 2);
     const overlayIds = overlay.split(mainSeparator);
-    const overlayRefined = overlayIds.filter(i => i.includes("pdbRedo") || i.includes("cstf"));
+    const overlayRefined = overlayIds.filter(i => refinedModelsType.some(type => i.includes(type)));
     const overlayNotRefined = overlayIds.filter(
-        i => !(i.includes("pdbRedo") || i.includes("cstf"))
+        i => !refinedModelsType.some(type => i.includes(type))
     );
-    const refinedModels = buildRefinedModels(overlayRefined);
+    const refinedDbModels = buildRefinedModels(overlayRefined);
     const [mainPdbRich = "", mainEmdbRichId] = splitPdbIdb(main);
     const [mainPdbRichId, chainId, ligandId] = mainPdbRich.split(chainSeparator, 3);
 
@@ -151,7 +161,7 @@ export function getSelectionFromString(items: Maybe<string>): Selection {
             emdb: buildDbItem(mainEmdbRichId),
         },
         overlay: _.compact(overlayNotRefined.map(buildDbItem)),
-        refinedModels: refinedModels,
+        refinedModels: refinedDbModels,
         chainId: chainId,
         ligandId: ligandId,
     };
@@ -203,6 +213,7 @@ export function setMainItem(
     };
 }
 
+// Used only when user manually removes. Not any other.
 export function removeOverlayItem(selection: Selection, id: string): Selection {
     if (selection.type !== "free") return selection;
     const overlay = selection.overlay.flatMap(item => (item.id === id ? [] : [item]));
@@ -270,8 +281,14 @@ function getId(item: DbItem) {
     return item.id;
 }
 
-export function getRefinedModelId(item: DbItem<RefinedModelType>) {
-    return item.id.replaceAll("-" + item.type, "");
+export function getRefinedModelIds(
+    item: DbItem<RefinedModelType>
+): { pdbId: string; emdbId: Maybe<string> } {
+    const { pdbId, emdbId } = getRefinedModelFromLabel(item.id.split("-"));
+    return {
+        pdbId: pdbId || "",
+        emdbId: emdbId || undefined,
+    };
 }
 
 export function diffDbItems(newItems: DbItem[], oldItems: DbItem[]) {

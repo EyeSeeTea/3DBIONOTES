@@ -7,6 +7,7 @@ import {
     Structure,
     ValidationMethod,
     ValidationSource,
+    W3Color,
 } from "../../domain/entities/Covid19Info";
 import {
     Covid19InfoRepository,
@@ -193,51 +194,56 @@ function buildStructure(pdbEntry: PdbEntry): Structure {
     };
 }
 
-function getValidationQueryLink(pdbId: string, validation: RefModel) {
-    switch (validation.source) {
-        case "PDB-REDO":
+function getValidationQueryLink(args: {
+    pdbId: string;
+    emdbId: Maybe<string>;
+    validationMethod: PdbMethodName;
+}) {
+    const { pdbId, emdbId, validationMethod } = args;
+    switch (validationMethod) {
+        case "PDB-Redo":
             return pdbId + "-pdbRedo";
-        case "CSTF":
-            return pdbId + "-cstf";
-        case "CERES":
-            return pdbId + "-ceres";
+        case "Isolde":
+            return pdbId + "-isolde";
+        case "Refmac":
+            return pdbId + "-refmac";
+        case "PHENIX":
+            if (!emdbId) {
+                console.error("PHENIX validation requires an EMDB ID");
+                return undefined;
+            }
+            // Remove "EMD-" prefix
+            return `${pdbId}-${emdbId.replaceAll("EMD-", "")}-phenix`;
         default:
-            console.error(`Validation not supported: "${validation.source}"`);
+            console.error(`Validation not supported: "${validationMethod}"`);
             return undefined;
     }
 }
+
+const RefinedModelColor: Record<PdbSourceName, W3Color> = {
+    "PDB-REDO": "w3-orange",
+    CSTF: "w3-cyan",
+    CERES: "w3-blue",
+};
 
 function getPdbValidations(pdb: PdbEntry, emdb: Emdb | null): PdbValidation[] {
     const pdbId = pdb.dbId.toLowerCase();
     const emdbId = emdb && emdb.dbId.toUpperCase();
 
     const pdbValidation = (validation: RefModel): PdbValidation | undefined => {
-        const validationQuery = getValidationQueryLink(pdbId, validation);
+        const validationQuery = getValidationQueryLink({
+            pdbId,
+            emdbId,
+            validationMethod: validation.method,
+        });
+
         const queryLink = `/${pdbId}${emdbId ? "+" + emdbId : ""}|${validationQuery}`;
 
-        switch (validation.source) {
-            case "PDB-REDO":
-                return {
-                    ...validation,
-                    queryLink,
-                    badgeColor: "w3-orange",
-                };
-            case "CSTF":
-                return {
-                    ...validation,
-                    queryLink,
-                    badgeColor: "w3-cyan",
-                };
-            case "CERES":
-                return {
-                    ...validation,
-                    queryLink: undefined,
-                    badgeColor: "w3-blue",
-                };
-            default:
-                console.error(`Validation not supported: "${validation.source}"`);
-                return undefined;
-        }
+        return {
+            ...validation,
+            queryLink,
+            badgeColor: RefinedModelColor[validation.source],
+        };
     };
 
     return _.compact(pdb.refModels.map(pdbValidation));

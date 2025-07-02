@@ -185,13 +185,21 @@ export function getCurrentItems(plugin: PDBeMolstarPlugin) {
                     label?.match(/^(\d[\d\w]{3}-pdbRedo)$/)?.[1],
                     "pdbRedo",
                 ];
-                const cstf: [string | undefined, Type] = [
-                    label?.match(/^(\d[\d\w]{3}-cstf)$/)?.[1],
-                    "cstf",
+                const isolde: [string | undefined, Type] = [
+                    label?.match(/^(\d[\d\w]{3}-isolde)$/)?.[1],
+                    "isolde",
+                ];
+                const refmac: [string | undefined, Type] = [
+                    label?.match(/^(\d[\d\w]{3}-refmac)$/)?.[1],
+                    "refmac",
+                ];
+                const phenix: [string | undefined, Type] = [
+                    label?.match(/^(\d[\d\w]{3}-phenix)$/)?.[1],
+                    "phenix",
                 ];
 
                 return _.compact(
-                    [pdbId, emdbId, pdbRedo, cstf].map(([id, type]) =>
+                    [pdbId, emdbId, pdbRedo, isolde, refmac, phenix].map(([id, type]) =>
                         id && type
                             ? {
                                   type: type,
