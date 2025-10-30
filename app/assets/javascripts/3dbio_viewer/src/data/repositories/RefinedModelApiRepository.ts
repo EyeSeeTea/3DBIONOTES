@@ -18,7 +18,7 @@ export class RefinedModelApiRepository implements RefinedModelRepository {
     getBy(args: RefinedModelGetArgs): FutureData<RefinedModel> {
         const { pdbId, emdbId, method } = args;
         const emdbParam = emdbId ? `&emdbId=EMD-${emdbId}` : "";
-        const url = `${REFINED_MODELS_ENDPOINT}?pdbId=${pdbId.toUpperCase()}${emdbParam}&methodType=${
+        const url = `${REFINED_MODELS_ENDPOINT}?pdbId=${pdbId.toUpperCase()}${emdbParam}&method=${
             refinedMethods[method]
         }`;
 
@@ -28,7 +28,9 @@ export class RefinedModelApiRepository implements RefinedModelRepository {
             .map(getResults)
             .flatMap(
                 (refinedModels): FutureData<RefinedModel> => {
-                    const coincidence = refinedModels[0];
+                    const coincidence = refinedModels.find(
+                        rm => rm.method === refinedMethods[method]
+                    );
                     if (!coincidence)
                         return Future.error({
                             message: i18n.t(
